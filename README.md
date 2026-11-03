@@ -1,8 +1,26 @@
-# Alarm Management v0.8.0 — Push und Tablet-Overlay
+# Alarm Management v0.8.1 — Push und Tablet-Overlay
 
 Für Home Assistant OS / Core 2026.10.4. Eingänge sammeln Signale, Regeln werten sie aus,
 Ausgänge verteilen die passenden Zustände und Nachrichten. Diese Version ergänzt echte
 Benachrichtigungen neben den bisherigen Schalt- und Textausgängen.
+
+## Korrektur in v0.8.1
+
+Leere Standardwerte an den äußeren Formularabschnitten verhinderten in v0.8.0 die
+Initialisierung der inneren Felder. Dadurch blieb unter anderem die Pflichtauswahl
+Pushover-Priorität leer, obwohl der Abschnitt für normale Handy-Nachrichten optional ist.
+Das konnte trotz korrekt gewähltem Handy die Meldung „Nicht alle Pflichtfelder sind
+ausgefüllt“ auslösen. Der Fehler lag im Formular der Integration.
+
+V0.8.1 lässt HA die inneren Werte initialisieren: normale Pushover-Priorität, Titel,
+Nachrichtentexte sowie vorhandene Regel-/Formatwerte bleiben dadurch vorausgefüllt.
+Vier Regressionstests berücksichtigen jetzt die tatsächliche Initialisierungsreihenfolge
+des HA-Frontends, die in den bisherigen Flow-Doubles fehlte. Keine Änderung der
+Versandlogik oder des Datenformats gegenüber v0.8.0.
+
+Nach dem Update HA neu starten und den alten geöffneten Konfigurationsdialog schließen.
+Den Dialog neu öffnen; ein normaler Handy-Ausgang kann ohne Öffnen des Pushover-Abschnitts
+gespeichert werden. Dazu Empfänger auswählen und unter Bei Alarm z. B. Testalarm eingeben.
 
 ## Neu
 
@@ -25,7 +43,7 @@ Neue Versionen werden erst nach bewusstem Veröffentlichen eines passenden Relea
 in HACS angeboten. Ein neuer Commit auf einem Entwicklungszweig ist noch kein Release.
 
 Vor Update vollständiges HA-Backup erstellen und Testalarme normalisieren.
-Nach Installation von v0.8.0 HA vollständig neu starten, bestehende Integration behalten.
+Nach Installation von v0.8.1 HA vollständig neu starten, bestehende Integration behalten.
 Eingänge, Regeln, IDs und vorhandene Ausgangseinstellungen werden übernommen.
 Alte Ausgangsoptionen Version 1 werden verlustfrei auf Version 2 ergänzt; Store-Schema
 bleibt 5. Neue Empfängernachweise nutzen den vorhandenen atomaren Store. Für Downgrade
@@ -129,7 +147,7 @@ Netzwerkverbindung, Berechtigungen und Anbieterlimits.
 7. Aktiven Alarm neu laden/neustarten: keine unbeabsichtigte Doppelmeldung.
 8. Bestehende Schalt- und Textausgänge ebenfalls prüfen.
 
-193 Offline-Tests bestanden; kein echter HA-/Browser-/Handy-/Pushover-Test hier ausgeführt.
+197 Offline-Tests bestanden; kein echter HA-/Browser-/Handy-/Pushover-Test hier ausgeführt.
 Die Geräteabnahme erfolgt in deiner Installation. Details: [VALIDATION.md](VALIDATION.md).
 
 ## Noch offen

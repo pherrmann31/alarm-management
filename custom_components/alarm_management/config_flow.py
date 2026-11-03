@@ -334,7 +334,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         schema = {key: value for key, value in flat.items() if str(getattr(key, "schema", getattr(key, "key", key))) in ("name", "enabled")}
         for name, fields in RULE_SECTIONS.items():
             grouped = {key: value for key, value in flat.items() if str(getattr(key, "schema", getattr(key, "key", key))) in fields}
-            schema[probatio.Required(name, default={})] = section(probatio.Schema(grouped), {"collapsed": False})
+            schema[probatio.Required(name)] = section(probatio.Schema(grouped), {"collapsed": False})
         return probatio.Schema(schema)
 
     async def _rule_form(self, step_id, user_input, rule=None):
@@ -549,18 +549,18 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             config = values['notification']
             delivery = {probatio.Required('routes',default=config['routes']): self._notification_choices(values['kind'],config['routes']),
                         probatio.Optional('title',default=config['title']): str}
-            schema[probatio.Required('delivery',default={})] = section(probatio.Schema(delivery),{'collapsed':False})
+            schema[probatio.Required('delivery')] = section(probatio.Schema(delivery),{'collapsed':False})
             if values['kind']=='notification':
                 pushover = {probatio.Optional('devices',default=config['devices']):str,
                     probatio.Required('priority',default=str(config['priority'])):SelectSelector({'options':['-2','-1','0','1'],'translation_key':'notification_priority','mode':'dropdown'})}
-                schema[probatio.Required('pushover',default={})] = section(probatio.Schema(pushover),{'collapsed':True})
+                schema[probatio.Required('pushover')] = section(probatio.Schema(pushover),{'collapsed':True})
         for group, field in (("alarm", "alarm_value"), ("acknowledged", "acknowledged_value"), ("idle", "idle_value")):
             field_type = probatio.Required if values["kind"] == "switch" else probatio.Optional
             selector = (SelectSelector({"options": ["on", "off"], "translation_key": "switch_value", "mode": "list"})
                                                                       if values["kind"] == "switch" else TextSelector({"multiline": values["kind"] == "long_text"}))
-            schema[probatio.Required(group, default={})] = section(probatio.Schema({field_type(field, default=values[field]): selector}), {"collapsed": group != "alarm"})
+            schema[probatio.Required(group)] = section(probatio.Schema({field_type(field, default=values[field]): selector}), {"collapsed": group != "alarm"})
         if format_fields:
-            schema[probatio.Required("format", default={})] = section(probatio.Schema(format_fields), {"collapsed": True})
+            schema[probatio.Required("format")] = section(probatio.Schema(format_fields), {"collapsed": True})
         return probatio.Schema(schema)
 
     async def _output_form(self, step_id, user_input, output=None):

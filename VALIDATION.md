@@ -1,14 +1,15 @@
-# Prüfbericht — Alarm Management v0.8.0
+# Prüfbericht — Alarm Management v0.8.1
 
 Datum: 03.11.2026. Ziel: Home Assistant OS / Core 2026.10.4.
 
 ## Bestanden
 
-- 29 Python-Dateien auf Syntax geprüft, Python 3.14.10.
+- 30 Python-Dateien auf Syntax geprüft, Python 3.14.10.
 - JSON, Manifest, services.yaml, HACS-Struktur, Übersetzungsschlüssel/Platzhalter und Icons-Zuordnungen geprüft.
-- 193 Offline-Tests: 172 bisherige Regressionen und 21 neue Benachrichtigungsprüfungen.
+- 197 Offline-Tests: 172 bisherige Regressionen und 25 neue Benachrichtigungsprüfungen.
 - App-Aktionen, native notify.send_message, Pushover-Parameter und explizit adressierte Browser-Mod-Popups gegen isolierte HA-Doubles geprüft.
 - Vorhandene Ausgabeoptionen Version 1 werden ohne ID-Verlust auf Version 2 ergänzt; ungültige und zukünftige Daten bleiben gesperrt. Store bleibt Schema 5; Serialisierung der Empfängerrecords geprüft.
+- Vier neue Formularprüfungen: unverdeckte Standardwerte, normales Handy ohne Öffnen von Pushover, Overlay-Titel/Text, vorhandene Regel- und Formatwerte. HA-Frontend-Initialisierung als Vertrag nachgestellt; kein echtes Browser-Rendering.
 - Mehrere Empfänger, renderbare Quellen/Bereiche, Größenlimits, kein Global-Browserziel, HTML-Escaping und eingeschränkte Pushover-Priorität geprüft.
 - Erfolgreiche Empfänger bleiben nach wiederholter Auswertung, Neuladen und manueller Wiederholung ausgelassen. Neue Alarmvorkommen senden erneut.
 - Teilfehler blockieren andere Empfänger nicht. Manuelle Wiederholung nur für fehlgeschlagene/unklare aktuelle Ziele; keine automatische Wiederholung von Pushfehlern.
@@ -41,6 +42,8 @@ Vor HACS-Update Backup erstellen; zuerst mit Testhelfern und gewählten Empfäng
 
 ## Primärquellen
 
+- [HA-Frontend: Abschnittsstandardwerte haben Vorrang vor inneren Vorgaben](https://github.com/home-assistant/frontend/blob/dev/src/components/ha-form/compute-initial-ha-form-data.ts)
+
 - [Core 2026.10.4 App-Notify](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/components/mobile_app/notify.py)
 - [Core 2026.10.4 Pushover](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/components/pushover/notify.py)
 - [HA-App-Dokumentation](https://companion.home-assistant.io/docs/notifications/notifications-basic/)
@@ -50,6 +53,10 @@ Vor HACS-Update Backup erstellen; zuerst mit Testhelfern und gewählten Empfäng
 ## Testausgabe
 
 ```text
+test_closed_format_and_phase_sections_preserve_saved_settings (test_form_defaults.FormDefaultTests.test_closed_format_and_phase_sections_preserve_saved_settings) ... ok
+test_overlay_keeps_title_and_default_message (test_form_defaults.FormDefaultTests.test_overlay_keeps_title_and_default_message) ... ok
+test_phone_saves_without_opening_optional_pushover_section (test_form_defaults.FormDefaultTests.test_phone_saves_without_opening_optional_pushover_section) ... ok
+test_rule_edit_preserves_existing_nested_values (test_form_defaults.FormDefaultTests.test_rule_edit_preserves_existing_nested_values) ... ok
 test_add_preserves_other_namespaces_and_original_options (test_inputs.FlowTests.test_add_preserves_other_namespaces_and_original_options) ... ok
 test_concurrent_change_is_not_overwritten (test_inputs.FlowTests.test_concurrent_change_is_not_overwritten) ... ok
 test_edit_replaces_entity_keeps_source_id (test_inputs.FlowTests.test_edit_replaces_entity_keeps_source_id) ... ok
@@ -245,7 +252,7 @@ test_trigger_ack_reset (test_simulation.StateMachineTests.test_trigger_ack_reset
 test_trigger_reactivates_acknowledged_alarm (test_simulation.StateMachineTests.test_trigger_reactivates_acknowledged_alarm) ... ok
 
 ----------------------------------------------------------------------
-Ran 193 tests in 0.809s
+Ran 197 tests in 0.965s
 
 OK
 ```
