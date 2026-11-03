@@ -1,0 +1,48 @@
+{
+  "options": {
+    "step": {
+      "rule_add": {
+        "sections": {
+          "when": "mdi:import",
+          "then": "mdi:export"
+        }
+      },
+      "rule_edit_details": {
+        "sections": {
+          "when": "mdi:import",
+          "then": "mdi:export"
+        }
+      },
+      "output_details": {
+        "sections": {
+          "alarm": "mdi:alarm-light-outline",
+          "acknowledged": "mdi:check-circle-outline",
+          "idle": "mdi:shield-check-outline",
+          "format": "mdi:format-letter-case"
+        }
+      },
+      "output_edit_details": {
+        "sections": {
+          "alarm": "mdi:alarm-light-outline",
+          "acknowledged": "mdi:check-circle-outline",
+          "idle": "mdi:shield-check-outline",
+          "format": "mdi:format-letter-case"
+        }
+      }
+    }
+  },
+  "services": {
+    "trigger_test": {
+      "service": "mdi:alarm-light-outline"
+    },
+    "acknowledge": {
+      "service": "mdi:check-circle-outline"
+    },
+    "reset": {
+      "service": "mdi:restore"
+    },
+    "retry_outputs": {
+      "service": "mdi:refresh"
+    }
+  }
+}

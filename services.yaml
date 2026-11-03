@@ -1,0 +1,18 @@
+{
+  "trigger_test": {
+    "name": "Manuellen Testalarm auslösen",
+    "description": "Aktiviert den unabhängigen manuellen Testalarm. Dieser hat keine regelgebundenen Ausgänge. Ohne Parameter."
+  },
+  "acknowledge": {
+    "name": "Alarme quittieren",
+    "description": "Quittiert gespeicherte Alarme; zugeordnete Ausgänge übernehmen ihre Quittierungswerte. Ohne Parameter."
+  },
+  "reset": {
+    "name": "Alarme zurücksetzen",
+    "description": "Setzt zulässig rücksetzbare Alarme zurück und fordert Ruhewerte an. Geräteaktionen und Rückmeldungen im Ausgabeprotokoll prüfen. Ohne Parameter."
+  },
+  "retry_outputs": {
+    "name": "Ausgaben erneut versuchen",
+    "description": "Startet die begrenzten Versuche für aktuell angeforderte oder bereits gesteuerte Ausgänge erneut. Ohne Parameter."
+  }
+}
