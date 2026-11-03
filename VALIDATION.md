@@ -1,14 +1,15 @@
-# Prüfbericht — Alarm Management v0.8.1
+# Prüfbericht — Alarm Management v0.8.2
 
 Datum: 03.11.2026. Ziel: Home Assistant OS / Core 2026.10.4.
 
 ## Bestanden
 
-- 30 Python-Dateien auf Syntax geprüft, Python 3.14.10.
+- 31 Python-Dateien auf Syntax geprüft, Python 3.14.10.
 - JSON, Manifest, services.yaml, HACS-Struktur, Übersetzungsschlüssel/Platzhalter und Icons-Zuordnungen geprüft.
-- 197 Offline-Tests: 172 bisherige Regressionen und 25 neue Benachrichtigungsprüfungen.
+- 201 Offline-Tests: 172 bisherige Regressionen und 29 neue Benachrichtigungsprüfungen.
 - App-Aktionen, native notify.send_message, Pushover-Parameter und explizit adressierte Browser-Mod-Popups gegen isolierte HA-Doubles geprüft.
 - Vorhandene Ausgabeoptionen Version 1 werden ohne ID-Verlust auf Version 2 ergänzt; ungültige und zukünftige Daten bleiben gesperrt. Store bleibt Schema 5; Serialisierung der Empfängerrecords geprüft.
+- Vier zusätzliche Liveness-Prüfungen mit asyncio.eager_task_factory in separaten Prozessen und externem 5-Sekunden-Zeitwächter: sofort beendete Aufgabe, unveränderte bestätigte Ausgabe, stille Push-Ausgabe, Integration entladen. Ereignisschleife bleibt bedienbar. Der alte Ablauf wurde separat bis zum externen Timeout reproduziert.
 - Vier neue Formularprüfungen: unverdeckte Standardwerte, normales Handy ohne Öffnen von Pushover, Overlay-Titel/Text, vorhandene Regel- und Formatwerte. HA-Frontend-Initialisierung als Vertrag nachgestellt; kein echtes Browser-Rendering.
 - Mehrere Empfänger, renderbare Quellen/Bereiche, Größenlimits, kein Global-Browserziel, HTML-Escaping und eingeschränkte Pushover-Priorität geprüft.
 - Erfolgreiche Empfänger bleiben nach wiederholter Auswertung, Neuladen und manueller Wiederholung ausgelassen. Neue Alarmvorkommen senden erneut.
@@ -42,6 +43,8 @@ Vor HACS-Update Backup erstellen; zuerst mit Testhelfern und gewählten Empfäng
 
 ## Primärquellen
 
+- [Core 2026.10.4: async_create_task startet standardmäßig eager](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/core.py)
+
 - [HA-Frontend: Abschnittsstandardwerte haben Vorrang vor inneren Vorgaben](https://github.com/home-assistant/frontend/blob/dev/src/components/ha-form/compute-initial-ha-form-data.ts)
 
 - [Core 2026.10.4 App-Notify](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/components/mobile_app/notify.py)
@@ -53,6 +56,10 @@ Vor HACS-Update Backup erstellen; zuerst mit Testhelfern und gewählten Empfäng
 ## Testausgabe
 
 ```text
+test_completed_eager_worker_with_missing_plan_drains (test_eager_tasks.EagerTaskLivenessTests.test_completed_eager_worker_with_missing_plan_drains) ... ok
+test_integration_unload_finishes_and_loop_remains_responsive (test_eager_tasks.EagerTaskLivenessTests.test_integration_unload_finishes_and_loop_remains_responsive) ... ok
+test_silent_notification_drains_with_eager_start (test_eager_tasks.EagerTaskLivenessTests.test_silent_notification_drains_with_eager_start) ... ok
+test_unchanged_confirmed_delivery_drains_with_eager_start (test_eager_tasks.EagerTaskLivenessTests.test_unchanged_confirmed_delivery_drains_with_eager_start) ... ok
 test_closed_format_and_phase_sections_preserve_saved_settings (test_form_defaults.FormDefaultTests.test_closed_format_and_phase_sections_preserve_saved_settings) ... ok
 test_overlay_keeps_title_and_default_message (test_form_defaults.FormDefaultTests.test_overlay_keeps_title_and_default_message) ... ok
 test_phone_saves_without_opening_optional_pushover_section (test_form_defaults.FormDefaultTests.test_phone_saves_without_opening_optional_pushover_section) ... ok
@@ -252,7 +259,7 @@ test_trigger_ack_reset (test_simulation.StateMachineTests.test_trigger_ack_reset
 test_trigger_reactivates_acknowledged_alarm (test_simulation.StateMachineTests.test_trigger_reactivates_acknowledged_alarm) ... ok
 
 ----------------------------------------------------------------------
-Ran 197 tests in 0.965s
+Ran 201 tests in 6.392s
 
 OK
 ```

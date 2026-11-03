@@ -1,8 +1,32 @@
-# Alarm Management v0.8.1 — Push und Tablet-Overlay
+# Alarm Management v0.8.2 — Push und Tablet-Overlay
 
 Für Home Assistant OS / Core 2026.10.4. Eingänge sammeln Signale, Regeln werten sie aus,
 Ausgänge verteilen die passenden Zustände und Nachrichten. Diese Version ergänzt echte
 Benachrichtigungen neben den bisherigen Schalt- und Textausgängen.
+
+## Korrektur in v0.8.2 — Hänger beim Speichern/Neuladen
+
+Ein mit v0.8.1 reproduzierter Fehler betraf die Verwaltung sofort abgeschlossener
+Ausgabeaufgaben. HA startet diese Aufgaben standardmäßig sofort (eager_start=True).
+Eine Aufgabe konnte sich bereits austragen, bevor sie in der Liste eingetragen war.
+Beim anschließenden Neuladen wartete drain endlos auf den bereits fertigen Eintrag.
+Weil diese Schleife nicht mehr auf die Ereignisschleife zurückgab, konnte HA insgesamt
+nicht mehr reagieren. Das ist ein Fehler der Integration, kein Fehler der Geräteauswahl.
+
+V0.8.2 räumt erledigte Aufgaben nach Registrierung über einen Abschluss-Callback auf.
+Zusätzlich entfernt drain fertige Einträge, bevor es wartet. Vier neue Prüfungen nutzen
+Pythons echten eager_task_factory und einen separaten Prozess als Zeitwächter.
+Der alte Ablauf ließ sich dabei bis zum externen Timeout reproduzieren; der neue beendet
+unveränderte Ausgaben, stille Nachrichten und das Entladen ohne blockierte Ereignisschleife.
+
+Die tatsächliche Ursache in einer konkreten HA-Installation muss bei verbleibenden
+Problemen mit deren Protokollen abgeglichen werden. Kein echter HA-Start wurde hier getestet.
+Die Formular-Korrektur aus v0.8.1 ist enthalten.
+
+Falls HA nach einem Neustart wieder erreichbar ist: vorerst nichts in der betroffenen
+Integration speichern oder deaktivieren. Zuerst Backup erstellen, v0.8.2 über HACS
+herunterladen und HA vollständig neu starten. Erst nach Anzeige von Version 0.8.2
+mit Testhelfern wieder einen Speichervorgang prüfen. Bestehende Einstellungen behalten.
 
 ## Korrektur in v0.8.1
 
@@ -43,7 +67,7 @@ Neue Versionen werden erst nach bewusstem Veröffentlichen eines passenden Relea
 in HACS angeboten. Ein neuer Commit auf einem Entwicklungszweig ist noch kein Release.
 
 Vor Update vollständiges HA-Backup erstellen und Testalarme normalisieren.
-Nach Installation von v0.8.1 HA vollständig neu starten, bestehende Integration behalten.
+Nach Installation von v0.8.2 HA vollständig neu starten, bestehende Integration behalten.
 Eingänge, Regeln, IDs und vorhandene Ausgangseinstellungen werden übernommen.
 Alte Ausgangsoptionen Version 1 werden verlustfrei auf Version 2 ergänzt; Store-Schema
 bleibt 5. Neue Empfängernachweise nutzen den vorhandenen atomaren Store. Für Downgrade
@@ -147,7 +171,7 @@ Netzwerkverbindung, Berechtigungen und Anbieterlimits.
 7. Aktiven Alarm neu laden/neustarten: keine unbeabsichtigte Doppelmeldung.
 8. Bestehende Schalt- und Textausgänge ebenfalls prüfen.
 
-197 Offline-Tests bestanden; kein echter HA-/Browser-/Handy-/Pushover-Test hier ausgeführt.
+201 Offline-Tests bestanden; kein echter HA-/Browser-/Handy-/Pushover-Test hier ausgeführt.
 Die Geräteabnahme erfolgt in deiner Installation. Details: [VALIDATION.md](VALIDATION.md).
 
 ## Noch offen

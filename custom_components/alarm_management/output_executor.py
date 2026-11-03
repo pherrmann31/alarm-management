@@ -54,7 +54,15 @@ class LiveOutputExecutor:
             self._dirty.add(item)
             task = self._tasks.get(item)
             if task is None or task.done():
-                self._tasks[item] = self.hass.async_create_task(self._worker(item))
+                task = self.hass.async_create_task(self._worker(item))
+                self._tasks[item] = task
+                # HA starts tasks eagerly. A worker can finish before assignment
+                # above, so its own finally block cannot reliably remove itself.
+                task.add_done_callback(lambda done, key=item: self._task_done(key, done))
+
+    def _task_done(self, output_id, task):
+        if self._tasks.get(output_id) is task:
+            self._tasks.pop(output_id, None)
 
     def retry(self):
         self._attempts.clear()
@@ -70,7 +78,13 @@ class LiveOutputExecutor:
 
     async def drain(self):
         while self._tasks:
-            await asyncio.gather(*list(self._tasks.values()), return_exceptions=True)
+            # Never busy-loop awaiting already completed eager tasks: in that
+            # case gather may finish synchronously and starve the entire HA loop.
+            for output_id, task in tuple(self._tasks.items()):
+                if task.done():
+                    self._task_done(output_id, task)
+            if self._tasks:
+                await asyncio.gather(*list(self._tasks.values()), return_exceptions=True)
 
     def _retry_later(self, output_id, delay=RETRY_DELAY):
         if not self.running or output_id in self._timers:
