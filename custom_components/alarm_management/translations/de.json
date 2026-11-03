@@ -1,0 +1,547 @@
+{
+  "title": "Alarm Management",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Alarm Management einrichten",
+        "description": "Aktivierte Ausgänge steuern zugeordnete Geräte und schreiben Texte. Verwende nur dafür vorgesehene Ziele. Bestehende Alarme können beim Start Ausgaben anfordern.",
+        "data": {
+          "confirm_live": "Ich habe verstanden: Aktivierte Ausgänge führen echte Aktionen aus"
+        }
+      }
+    },
+    "error": {
+      "live_required": "Bitte den Betrieb mit echten Ausgaben bestätigen."
+    },
+    "abort": {
+      "already_configured": "Alarm Management ist bereits eingerichtet."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Alarmstatus",
+        "state": {
+          "idle": "Ruhezustand",
+          "active": "Alarm aktiv",
+          "acknowledged": "Alarm quittiert"
+        }
+      },
+      "inputs": {
+        "name": "Ausgelöste Eingänge"
+      },
+      "triggered_by": {
+        "name": "Alarmquellen"
+      },
+      "triggered_areas": {
+        "name": "Bereiche"
+      },
+      "journal": {
+        "name": "Alarmverlauf"
+      },
+      "triggered_rules": {
+        "name": "Alarmregeln"
+      },
+      "matching_rules": {
+        "name": "Erfüllte Regeln"
+      },
+      "output_plan": {
+        "name": "Ausgabestatus"
+      },
+      "output_log": {
+        "name": "Ausgabeverlauf"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Alarme zurücksetzen"
+      },
+      "acknowledge": {
+        "name": "Alarme quittieren"
+      },
+      "retry_outputs": {
+        "name": "Ausgaben erneut versuchen"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Alarm Management konfigurieren",
+        "description": "**{state}** · {alarms} gespeicherte Alarme\n\n{inputs} Eingänge · {rules} Regeln · {outputs} Ausgänge",
+        "menu_options": {
+          "status": "Status & Überblick",
+          "inputs": "Eingangsquellen verwalten",
+          "rules": "Regeln verwalten",
+          "outputs": "Ausgänge verwalten"
+        },
+        "menu_option_descriptions": {
+          "status": "Alarmzustand, Quellen und Fehler ansehen",
+          "inputs": "Sensoren auswählen und Auslösezustände festlegen",
+          "rules": "Eingänge verknüpfen und Ausgänge zuordnen",
+          "outputs": "Schalten, Kurztext und Langtext einrichten"
+        }
+      },
+      "add": {
+        "title": "Entität für den Eingang wählen",
+        "description": "Danach wird der Name vorbelegt. Du kannst ihn im nächsten Schritt ändern.",
+        "data": {
+          "entity_id": "HA-Entität"
+        }
+      },
+      "edit": {
+        "title": "Eingang auswählen",
+        "data": {
+          "source_id": "Eingang"
+        }
+      },
+      "edit_input": {
+        "title": "Eingang bearbeiten",
+        "description": "Name und Auslösezustand festlegen. Anschließend den Eingang einer Regel zuordnen.",
+        "data": {
+          "name": "Name",
+          "entity_id": "HA-Entität",
+          "trigger_state": "Auslösezustand (Rohwert)",
+          "enabled": "Eingang aktiviert"
+        },
+        "data_description": {
+          "name": "Wird aus der Entität übernommen und kann frei geändert werden.",
+          "entity_id": "Die vorhandene HA-Entität wird nur gelesen.",
+          "trigger_state": "Exakter Rohwert, z. B. on oder triggered. Unter Entwicklerwerkzeuge → Zustände prüfen; Groß-/Kleinschreibung zählt.",
+          "enabled": "Nur aktivierte Eingänge können neue Regelalarme auslösen."
+        }
+      },
+      "remove": {
+        "title": "Eingang zum Entfernen auswählen",
+        "data": {
+          "source_id": "Eingang"
+        }
+      },
+      "confirm_remove": {
+        "title": "Eingang entfernen",
+        "description": "Eingang „{name}“ entfernen? Die HA-Entität bleibt erhalten.\n\nVerwendet von: {rules}\n\nVerknüpfte Regeln zuerst bearbeiten oder entfernen. Auch deaktivierte Regeln zählen als Verknüpfung.",
+        "data": {
+          "confirm": "Entfernen bestätigen"
+        }
+      },
+      "overview": {
+        "title": "Konfigurierte Eingänge",
+        "description": "{count} von {limit} Eingängen:\n\n{sources}\n\nNeue Eingänge müssen einer Regel zugeordnet werden. Schließen ändert keine Einstellungen."
+      },
+      "add_details": {
+        "title": "Eingang prüfen und benennen",
+        "description": "Name und Auslösezustand festlegen. Anschließend den Eingang einer Regel zuordnen.",
+        "data": {
+          "name": "Name",
+          "entity_id": "HA-Entität",
+          "trigger_state": "Auslösezustand (Rohwert)",
+          "enabled": "Eingang aktiviert"
+        },
+        "data_description": {
+          "name": "Wird aus der Entität übernommen und kann frei geändert werden.",
+          "entity_id": "Die vorhandene HA-Entität wird nur gelesen.",
+          "trigger_state": "Exakter Rohwert, z. B. on oder triggered. Unter Entwicklerwerkzeuge → Zustände prüfen; Groß-/Kleinschreibung zählt.",
+          "enabled": "Nur aktivierte Eingänge können neue Regelalarme auslösen."
+        }
+      },
+      "after_add": {
+        "title": "Noch einen Eingang oder fertig?",
+        "description": "„{name}“ ist vorgemerkt. {count} von {limit} Eingängen. Erst „Fertig – alle speichern“ übernimmt alle Änderungen. Abbrechen verwirft die neu hinzugefügten Eingänge dieser Sitzung.",
+        "menu_options": {
+          "add": "Noch einen Eingang",
+          "finish": "Fertig – alle speichern"
+        }
+      },
+      "inputs": {
+        "title": "Eingangsquellen verwalten",
+        "description": "{count} von {limit} Eingängen. Hier legst du fest, welches Signal einen Eingang auslöst.",
+        "menu_options": {
+          "add": "Eingang hinzufügen",
+          "edit": "Eingang bearbeiten",
+          "remove": "Eingang entfernen",
+          "overview": "Eingänge anzeigen",
+          "init": "Zur Übersicht"
+        },
+        "menu_option_descriptions": {
+          "add": "Neuen Eintrag anlegen",
+          "edit": "Name und Einstellungen anpassen",
+          "remove": "Eintrag nach Prüfung entfernen",
+          "overview": "Zuordnungen und Zustand ansehen",
+          "init": "Zur Hauptauswahl"
+        }
+      },
+      "rules": {
+        "title": "Regeln verwalten",
+        "description": "{count} von {limit} Regeln. Jede aktivierte Regel wird unabhängig ausgewertet. Gespeicherte Alarme bleiben bis zum Reset bestehen.",
+        "menu_options": {
+          "rule_add": "Regel hinzufügen",
+          "rule_edit": "Regel bearbeiten",
+          "rule_remove": "Regel entfernen",
+          "rule_overview": "Regelübersicht anzeigen",
+          "init": "Zur Übersicht"
+        },
+        "menu_option_descriptions": {
+          "rule_add": "Neuen Eintrag anlegen",
+          "rule_edit": "Name und Einstellungen anpassen",
+          "rule_remove": "Eintrag nach Prüfung entfernen",
+          "rule_overview": "Zuordnungen und Zustand ansehen",
+          "init": "Zur Hauptauswahl"
+        }
+      },
+      "rule_add": {
+        "title": "Regel hinzufügen",
+        "description": "Wenn die Eingangsbedingung erfüllt ist, wird der Alarm gespeichert und zugeordnete Ausgänge werden angefordert.",
+        "data": {
+          "name": "Regelname",
+          "enabled": "Regel aktiviert"
+        },
+        "data_description": {
+          "name": "Ein kurzer, eindeutiger Name für Anzeigen und Protokolle.",
+          "enabled": "Deaktivieren verhindert neue Auslösungen; bestehende Alarme bleiben bis zum Reset."
+        },
+        "sections": {
+          "when": {
+            "name": "Wenn …",
+            "description": "Eingänge auswählen und miteinander verknüpfen.",
+            "data": {
+              "input_ids": "Eingänge auswählen",
+              "mode": "Verknüpfung"
+            },
+            "data_description": {
+              "input_ids": "Mindestens einen Eingang auswählen.",
+              "mode": "ODER: ein Eingang genügt. UND: alle gewählten Eingänge müssen gleichzeitig passen. Andere Regeln gelten unabhängig."
+            }
+          },
+          "then": {
+            "name": "Dann …",
+            "description": "Alarmtyp und gewünschte Ausgänge festlegen.",
+            "data": {
+              "alarm_type": "Alarmtyp",
+              "output_ids": "Ausgänge zuordnen (optional)"
+            },
+            "data_description": {
+              "alarm_type": "Wird für Anzeige und Textplatzhalter verwendet.",
+              "output_ids": "Optional. Aktivierte Ausgänge steuern ihre zugeordneten Ziele tatsächlich."
+            }
+          }
+        }
+      },
+      "rule_edit_details": {
+        "title": "Regel bearbeiten",
+        "description": "Wenn die Eingangsbedingung erfüllt ist, wird der Alarm gespeichert und zugeordnete Ausgänge werden angefordert.",
+        "data": {
+          "name": "Regelname",
+          "enabled": "Regel aktiviert"
+        },
+        "data_description": {
+          "name": "Ein kurzer, eindeutiger Name für Anzeigen und Protokolle.",
+          "enabled": "Deaktivieren verhindert neue Auslösungen; bestehende Alarme bleiben bis zum Reset."
+        },
+        "sections": {
+          "when": {
+            "name": "Wenn …",
+            "description": "Eingänge auswählen und miteinander verknüpfen.",
+            "data": {
+              "input_ids": "Eingänge auswählen",
+              "mode": "Verknüpfung"
+            },
+            "data_description": {
+              "input_ids": "Mindestens einen Eingang auswählen.",
+              "mode": "ODER: ein Eingang genügt. UND: alle gewählten Eingänge müssen gleichzeitig passen. Andere Regeln gelten unabhängig."
+            }
+          },
+          "then": {
+            "name": "Dann …",
+            "description": "Alarmtyp und gewünschte Ausgänge festlegen.",
+            "data": {
+              "alarm_type": "Alarmtyp",
+              "output_ids": "Ausgänge zuordnen (optional)"
+            },
+            "data_description": {
+              "alarm_type": "Wird für Anzeige und Textplatzhalter verwendet.",
+              "output_ids": "Optional. Aktivierte Ausgänge steuern ihre zugeordneten Ziele tatsächlich."
+            }
+          }
+        }
+      },
+      "rule_edit": {
+        "title": "Regel zum Bearbeiten auswählen",
+        "data": {
+          "rule_id": "Regel"
+        }
+      },
+      "rule_remove": {
+        "title": "Regel zum Entfernen auswählen",
+        "data": {
+          "rule_id": "Regel"
+        }
+      },
+      "rule_confirm_remove": {
+        "title": "Regel entfernen",
+        "description": "„{name}“ entfernen? Eingänge und Geräte bleiben erhalten. Bereits gespeicherte Alarme bleiben bis zum Reset sichtbar.",
+        "data": {
+          "confirm": "Entfernen bestätigen"
+        }
+      },
+      "rule_after_add": {
+        "title": "Weitere Regel oder fertig?",
+        "description": "„{name}“ ist vorgemerkt. Insgesamt {count} Regeln. Erst „Fertig – alle speichern“ übernimmt die neuen Regeln. Abbrechen verwirft die Ergänzungen dieser Sitzung.",
+        "menu_options": {
+          "rule_add": "Noch eine Regel",
+          "rule_finish": "Fertig – alle speichern"
+        }
+      },
+      "rule_overview": {
+        "title": "Deine Regeln",
+        "description": "{count} Regeln:\n\n{rules}"
+      },
+      "outputs": {
+        "title": "Ausgänge verwalten",
+        "description": "{count} von {limit} Ausgängen. Aktivierte, zugeordnete Ziele führen echte Aktionen aus.",
+        "menu_options": {
+          "output_add": "Ausgang hinzufügen",
+          "output_edit": "Ausgang bearbeiten",
+          "output_remove": "Ausgang entfernen",
+          "output_overview": "Ausgangsübersicht anzeigen",
+          "init": "Zur Übersicht"
+        },
+        "menu_option_descriptions": {
+          "output_add": "Neuen Eintrag anlegen",
+          "output_edit": "Name und Einstellungen anpassen",
+          "output_remove": "Eintrag nach Prüfung entfernen",
+          "output_overview": "Zuordnungen und Zustand ansehen",
+          "init": "Zur Hauptauswahl"
+        }
+      },
+      "output_add": {
+        "title": "Ausgangstyp und Ziel wählen",
+        "description": "Schaltausgänge benötigen eine Schalter-, Licht- oder Sirenenentität. Bei Texten ist ein Ziel optional: Ohne Ziel wird nur die eigene Statusentität aktualisiert. Der nächste Schritt übernimmt den Namen.",
+        "data": {
+          "kind": "Ausgangstyp",
+          "entity_id": "Zielentität"
+        }
+      },
+      "output_details": {
+        "title": "Ausgang einstellen",
+        "description": "Werte je Alarmzustand festlegen. Aktivierte, zugeordnete Ziele werden tatsächlich geschaltet oder beschrieben.",
+        "data": {
+          "name": "Name",
+          "entity_id": "Zielentität",
+          "enabled": "Ausgang aktiviert"
+        },
+        "data_description": {
+          "name": "Wird auch als Name der eigenen Ausgangsanzeige verwendet.",
+          "entity_id": "Text ohne Ziel aktualisiert nur die eigene Statusentität. Schaltausgänge benötigen ein Ziel.",
+          "enabled": "Vor dem Aktivieren Werte und Zuordnung in den Regeln prüfen."
+        },
+        "sections": {
+          "alarm": {
+            "name": "Bei Alarm",
+            "description": "Wert bei mindestens einem anfordernden aktiven Alarm.",
+            "data": {
+              "alarm_value": "Wert"
+            },
+            "data_description": {
+              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+            }
+          },
+          "acknowledged": {
+            "name": "Nach Quittierung",
+            "description": "Wert, wenn nur noch quittierte Alarme anfordern.",
+            "data": {
+              "acknowledged_value": "Wert"
+            },
+            "data_description": {
+              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+            }
+          },
+          "idle": {
+            "name": "In Ruhe / nach Reset",
+            "description": "Ruhewert für zuvor durch die Integration gesteuerte Ziele. Kein pauschales Schalten beim Start.",
+            "data": {
+              "idle_value": "Wert"
+            },
+            "data_description": {
+              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+            }
+          },
+          "format": {
+            "name": "Kurztext-Format",
+            "description": "Zeichensatz passend zum Zielgerät wählen.",
+            "data": {
+              "encoding": "Kurztext-Zeichensatz"
+            },
+            "data_description": {
+              "encoding": "14 Byte sind nicht immer 14 Zeichen. Nicht darstellbare Zeichen werden als Fehler angezeigt."
+            }
+          }
+        }
+      },
+      "output_edit_details": {
+        "title": "Ausgang bearbeiten",
+        "description": "Werte je Alarmzustand festlegen. Aktivierte, zugeordnete Ziele werden tatsächlich geschaltet oder beschrieben.",
+        "data": {
+          "name": "Name",
+          "entity_id": "Zielentität",
+          "enabled": "Ausgang aktiviert"
+        },
+        "data_description": {
+          "name": "Wird auch als Name der eigenen Ausgangsanzeige verwendet.",
+          "entity_id": "Text ohne Ziel aktualisiert nur die eigene Statusentität. Schaltausgänge benötigen ein Ziel.",
+          "enabled": "Vor dem Aktivieren Werte und Zuordnung in den Regeln prüfen."
+        },
+        "sections": {
+          "alarm": {
+            "name": "Bei Alarm",
+            "description": "Wert bei mindestens einem anfordernden aktiven Alarm.",
+            "data": {
+              "alarm_value": "Wert"
+            },
+            "data_description": {
+              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+            }
+          },
+          "acknowledged": {
+            "name": "Nach Quittierung",
+            "description": "Wert, wenn nur noch quittierte Alarme anfordern.",
+            "data": {
+              "acknowledged_value": "Wert"
+            },
+            "data_description": {
+              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+            }
+          },
+          "idle": {
+            "name": "In Ruhe / nach Reset",
+            "description": "Ruhewert für zuvor durch die Integration gesteuerte Ziele. Kein pauschales Schalten beim Start.",
+            "data": {
+              "idle_value": "Wert"
+            },
+            "data_description": {
+              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+            }
+          },
+          "format": {
+            "name": "Kurztext-Format",
+            "description": "Zeichensatz passend zum Zielgerät wählen.",
+            "data": {
+              "encoding": "Kurztext-Zeichensatz"
+            },
+            "data_description": {
+              "encoding": "14 Byte sind nicht immer 14 Zeichen. Nicht darstellbare Zeichen werden als Fehler angezeigt."
+            }
+          }
+        }
+      },
+      "output_edit": {
+        "title": "Ausgang auswählen",
+        "data": {
+          "output_id": "Ausgang"
+        }
+      },
+      "output_remove": {
+        "title": "Ausgang zum Entfernen auswählen",
+        "data": {
+          "output_id": "Ausgang"
+        }
+      },
+      "output_after_add": {
+        "title": "Noch ein Ausgang oder fertig?",
+        "description": "„{name}“ ist vorgemerkt. Insgesamt {count} Ausgänge. Erst „Fertig – alle speichern“ übernimmt die Ergänzungen. Anschließend die gewünschten Ausgänge in den Regeln auswählen.",
+        "menu_options": {
+          "output_add": "Noch einen Ausgang",
+          "output_finish": "Fertig – alle speichern"
+        }
+      },
+      "output_confirm_remove": {
+        "title": "Ausgang entfernen",
+        "description": "„{name}“ entfernen? Zielgerät und ursprüngliche HA-Entität bleiben erhalten.\n\nZugeordnet in: {rules}\n\nVorhandene Regelzuordnungen zuerst lösen.",
+        "data": {
+          "confirm": "Entfernen bestätigen"
+        }
+      },
+      "output_overview": {
+        "title": "Deine Ausgänge",
+        "description": "{count} Ausgänge:\n\n{outputs}"
+      },
+      "status": {
+        "title": "Status & Überblick",
+        "description": "**Alarmzustand:** {state}\n\n**Gespeicherte Alarme:** {alarms}\n\n**Ausgelöste Regeln:** {rules}\n\n**Alarmquellen:** {sources}\n\n**Eingänge mit unklarem Zustand:** {source_errors}\n\n**Ausgänge mit Fehler:** {output_errors}\n\nMomentaufnahme beim Öffnen. Weiter führt zurück zur Konfiguration und ändert keine Einstellungen."
+      }
+    },
+    "error": {
+      "invalid_input": "Ungültige Eingabedaten.",
+      "invalid_name": "Bitte einen Namen mit 1 bis 80 Zeichen eingeben.",
+      "invalid_entity": "Bitte eine gültige HA-Entität auswählen.",
+      "invalid_state": "1 bis 255 Zeichen verwenden; unknown und unavailable sind keine Auslösezustände.",
+      "invalid_alarm_type": "Bitte einen angebotenen Alarmtyp auswählen.",
+      "entity_not_found": "Diese Entität ist nicht vorhanden. Bitte eine vorhandene auswählen.",
+      "own_entity": "Eigene Sensoren dieser Integration können nicht als Eingang verwendet werden.",
+      "confirmation_required": "Bitte das Entfernen bestätigen oder den Dialog abbrechen.",
+      "invalid_rule": "Die Regel enthält ungültige Daten.",
+      "choose_inputs": "Mindestens einen Eingang auswählen; keine doppelten Einträge.",
+      "unknown_input": "Ein gewählter Eingang ist nicht mehr vorhanden. Auswahl prüfen.",
+      "invalid_mode": "Bitte UND oder ODER auswählen.",
+      "input_in_use": "Dieser Eingang wird noch in Regeln verwendet. Zuerst die genannten Regeln bearbeiten oder entfernen.",
+      "invalid_output": "Ungültige Ausgangskonfiguration.",
+      "invalid_output_target": "Zielentität passt nicht zum Ausgangstyp.",
+      "output_target_required": "Für einen Schaltausgang bitte eine Zielentität auswählen.",
+      "invalid_switch_value": "Bitte EIN oder AUS auswählen.",
+      "duplicate_output_target": "Für dieses Ziel existiert bereits ein Ausgang. Diesen in mehreren Regeln verwenden oder bearbeiten.",
+      "invalid_template": "Nur die angegebenen einfachen Platzhalter verwenden; Klammern und Schreibweise prüfen.",
+      "text_too_long": "Text höchstens 4096 Zeichen; keine Nullzeichen.",
+      "short_text_invalid": "Kurztext ohne Zeilenumbrüche eingeben.",
+      "short_text_too_long": "Kurztext überschreitet 14 Byte. Kürzen; Platzhalter werden zusätzlich bei der Auswertung geprüft.",
+      "unsupported_character": "Text enthält Zeichen außerhalb des gewählten Zeichensatzes.",
+      "invalid_output_assignment": "Ausgangsauswahl ungültig. Vorhandene Ausgänge ohne Duplikate wählen.",
+      "output_in_use": "Der Ausgang wird noch in Regeln verwendet. Dort die Zuordnung zuerst entfernen.",
+      "output_owned": "Dieses Ziel wird noch von der Integration gesteuert. Zuerst Alarm zurücksetzen oder Ausgang deaktivieren und den bestätigten Ruhewert abwarten."
+    },
+    "abort": {
+      "invalid_configuration": "Eingänge, Regeln oder Ausgänge ungültig oder aus neuerer Version. Nichts überschrieben; Protokolle und Backup prüfen.",
+      "configuration_changed": "Die Konfiguration wurde zwischenzeitlich geändert. Bitte den Dialog neu öffnen.",
+      "max_inputs": "Maximal zehn Eingänge. Zuerst einen Eingang entfernen.",
+      "no_inputs": "Noch keine Eingänge vorhanden.",
+      "overview_closed": "Übersicht geschlossen. Keine Einstellungen geändert.",
+      "no_inputs_for_rules": "Bitte zuerst unter Eingangsquellen mindestens einen Eingang anlegen.",
+      "max_rules": "Maximal 30 Regeln. Zuerst eine Regel entfernen.",
+      "no_rules": "Noch keine Regeln vorhanden. Über Hinzufügen eine Regel anlegen.",
+      "max_outputs": "Maximal 20 Ausgänge. Zuerst einen Ausgang entfernen.",
+      "no_outputs": "Noch keine Ausgänge vorhanden."
+    }
+  },
+  "selector": {
+    "alarm_type": {
+      "options": {
+        "house": "Hausalarm",
+        "fire": "Feuer",
+        "intrusion": "Einbruch"
+      }
+    },
+    "rule_mode": {
+      "options": {
+        "any": "ODER – mindestens ein Eingang",
+        "all": "UND – alle ausgewählten Eingänge"
+      }
+    },
+    "output_kind": {
+      "options": {
+        "switch": "Schaltausgang · EIN/AUS",
+        "short_text": "Kurztext · maximal 14 Byte",
+        "long_text": "Langtext"
+      }
+    },
+    "output_encoding": {
+      "options": {
+        "latin-1": "Latin-1 · KNX DPT 16.001",
+        "ascii": "ASCII · KNX DPT 16.000"
+      }
+    },
+    "switch_value": {
+      "options": {
+        "on": "EIN",
+        "off": "AUS"
+      }
+    }
+  }
+}

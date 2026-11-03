@@ -1,8 +1,0 @@
-__pycache__/
-*.py[cod]
-.venv/
-.env
-.storage/
-secrets.yaml
-configuration.yaml
-*.log
