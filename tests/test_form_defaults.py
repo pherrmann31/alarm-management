@@ -29,21 +29,21 @@ class FormDefaultTests(unittest.IsolatedAsyncioTestCase):
     async def test_phone_saves_without_opening_optional_pushover_section(self):
         flow=outputs.OutputFlowTests().flow()
         await flow.async_step_init()
-        form=await flow.async_step_output_add({'kind':'notification'})
+        form=await flow.async_step_notification_add({'kind':'notification'})
         payload=frontend_initial_data(form['data_schema'])
         self.assertEqual(payload['pushover']['priority'],'0')
         self.assertEqual(payload['delivery']['title'],'Alarm Management')
-        self.assertEqual(payload['acknowledged']['acknowledged_value'],'')
+        self.assertIn('quittiert',payload['acknowledged']['acknowledged_value'])
         payload['delivery']['routes']=['mobile_app:notify.mobile_app_phone']
         payload['alarm']['alarm_value']='Testalarm'
         result=await flow.async_step_output_details(payload)
-        self.assertEqual(result['step_id'],'output_after_add')
+        self.assertEqual(result['step_id'],'notification_after_add')
         self.assertEqual(flow._outputs[0].notification['priority'],0)
 
     async def test_overlay_keeps_title_and_default_message(self):
         flow=outputs.OutputFlowTests().flow()
         await flow.async_step_init()
-        form=await flow.async_step_output_add({'kind':'overlay'})
+        form=await flow.async_step_notification_add({'kind':'overlay'})
         payload=frontend_initial_data(form['data_schema'])
         self.assertEqual(payload['delivery']['title'],'Alarm Management')
         self.assertIn('{quelle}',payload['alarm']['alarm_value'])

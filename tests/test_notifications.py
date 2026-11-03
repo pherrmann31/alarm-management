@@ -276,7 +276,7 @@ class NotificationFlowTests(unittest.IsolatedAsyncioTestCase):
         device=types.SimpleNamespace(id='a'*32,name_by_user='Flur Tablet',name='Tablet',identifiers={('browser_mod','browser-flur')})
         flow.hass.devices[device.id]=device
         await flow.async_step_init()
-        form=await flow.async_step_output_add({'kind':'overlay'})
+        form=await flow.async_step_notification_add({'kind':'overlay'})
         delivery=next(value for field,value in form['data_schema'].schema.items() if field.key=='delivery')
         selector=next(value for field,value in delivery.schema.schema.items() if field.key=='routes')
         self.assertTrue(selector.config['multiple'])

@@ -1,12 +1,17 @@
-# Prüfbericht — Alarm Management v0.8.2
+# Prüfbericht — Alarm Management v0.9.0
 
 Datum: 03.11.2026. Ziel: Home Assistant OS / Core 2026.10.4.
 
 ## Bestanden
 
-- 31 Python-Dateien auf Syntax geprüft, Python 3.14.10.
+- Eigene Benachrichtigungsnavigation, getrennte Typen/Listen und stabile Regelbindungen geprüft. Keine Zielentitätsauswahl im Benachrichtigungs-Schritt.
+- Resetfehler nennen Grund und gehen nur an zugeordnete Empfänger; unveränderte Alarm-/Schaltanforderung und kein erneuter Versand an unbeteiligte Ziele geprüft.
+- Browser-Mod-Quittieren-Knopf, Vorkommensnachweis, gespeicherte Rückmeldung, Ablehnung alter Pop-ups und neu hinzugekommener Quellen geprüft. Andere Regeln und manueller Alarm bleiben aktiv.
+- Speicherfehler bestätigt keine Quittierung. Ein neuer Eingang während laufender Speicherung wird anschließend verarbeitet; Rückmeldung bleibt trotz unbeteiligtem neuen Alarm erhalten.
+
+- 32 Python-Dateien auf Syntax geprüft, Python 3.14.10.
 - JSON, Manifest, services.yaml, HACS-Struktur, Übersetzungsschlüssel/Platzhalter und Icons-Zuordnungen geprüft.
-- 201 Offline-Tests: 172 bisherige Regressionen und 29 neue Benachrichtigungsprüfungen.
+- 218 Offline-Tests: 201 bisherige Regressionen und 17 neue Verwaltungs-/Rückmeldungsprüfungen.
 - App-Aktionen, native notify.send_message, Pushover-Parameter und explizit adressierte Browser-Mod-Popups gegen isolierte HA-Doubles geprüft.
 - Vorhandene Ausgabeoptionen Version 1 werden ohne ID-Verlust auf Version 2 ergänzt; ungültige und zukünftige Daten bleiben gesperrt. Store bleibt Schema 5; Serialisierung der Empfängerrecords geprüft.
 - Vier zusätzliche Liveness-Prüfungen mit asyncio.eager_task_factory in separaten Prozessen und externem 5-Sekunden-Zeitwächter: sofort beendete Aufgabe, unveränderte bestätigte Ausgabe, stille Push-Ausgabe, Integration entladen. Ereignisschleife bleibt bedienbar. Der alte Ablauf wurde separat bis zum externen Timeout reproduziert.
@@ -114,6 +119,23 @@ test_text_value_is_really_sent_to_text_service (test_live_outputs.LiveExecutionT
 test_legacy_plan_status_is_relabelled_and_invalid_owned_record_rejected (test_live_outputs.LiveMigrationTests.test_legacy_plan_status_is_relabelled_and_invalid_owned_record_rejected) ... ok
 test_owned_output_target_cannot_be_silently_changed (test_live_outputs.LiveMigrationTests.test_owned_output_target_cannot_be_silently_changed) ... ok
 test_v05_store_preserves_alarms_and_relabels_plans (test_live_outputs.LiveMigrationTests.test_v05_store_preserves_alarms_and_relabels_plans) ... ok
+test_failed_storage_does_not_confirm_popup_acknowledgement (test_notification_management.NotificationFeedbackTests.test_failed_storage_does_not_confirm_popup_acknowledgement) ... ok
+test_full_length_custom_ack_text_still_returns_popup_feedback (test_notification_management.NotificationFeedbackTests.test_full_length_custom_ack_text_still_returns_popup_feedback) ... ok
+test_input_arriving_while_ack_is_stored_is_not_discarded (test_notification_management.NotificationFeedbackTests.test_input_arriving_while_ack_is_stored_is_not_discarded) ... ok
+test_new_source_in_same_rule_invalidates_old_popup (test_notification_management.NotificationFeedbackTests.test_new_source_in_same_rule_invalidates_old_popup) ... ok
+test_popup_acknowledgement_does_not_touch_other_rule_or_manual_alarm (test_notification_management.NotificationFeedbackTests.test_popup_acknowledgement_does_not_touch_other_rule_or_manual_alarm) ... ok
+test_popup_button_acknowledges_and_returns_server_confirmation (test_notification_management.NotificationFeedbackTests.test_popup_button_acknowledges_and_returns_server_confirmation) ... ok
+test_rejected_reset_does_not_change_actuator_request (test_notification_management.NotificationFeedbackTests.test_rejected_reset_does_not_change_actuator_request) ... ok
+test_reset_rejection_sends_the_reason_without_resetting_alarm (test_notification_management.NotificationFeedbackTests.test_reset_rejection_sends_the_reason_without_resetting_alarm) ... ok
+test_stale_popup_cannot_acknowledge_a_new_occurrence (test_notification_management.NotificationFeedbackTests.test_stale_popup_cannot_acknowledge_a_new_occurrence) ... ok
+test_unknown_input_reason_is_delivered (test_notification_management.NotificationFeedbackTests.test_unknown_input_reason_is_delivered) ... ok
+test_unrelated_notification_is_not_repeated_on_reset_error (test_notification_management.NotificationFeedbackTests.test_unrelated_notification_is_not_repeated_on_reset_error) ... ok
+test_list_choices_are_separated_with_stable_ids (test_notification_management.NotificationNavigationTests.test_list_choices_are_separated_with_stable_ids) ... ok
+test_new_notification_has_acknowledgement_and_reset_defaults (test_notification_management.NotificationNavigationTests.test_new_notification_has_acknowledgement_and_reset_defaults) ... ok
+test_notification_menu_has_no_entity_target_and_no_actuator_kinds (test_notification_management.NotificationNavigationTests.test_notification_menu_has_no_entity_target_and_no_actuator_kinds) ... ok
+test_rule_edit_splits_and_preserves_both_assignments (test_notification_management.NotificationNavigationTests.test_rule_edit_splits_and_preserves_both_assignments) ... ok
+test_rule_selector_contains_names_without_or_and_suffix (test_notification_management.NotificationNavigationTests.test_rule_selector_contains_names_without_or_and_suffix) ... ok
+test_wrong_menu_cannot_create_notification (test_notification_management.NotificationNavigationTests.test_wrong_menu_cannot_create_notification) ... ok
 test_legacy_config_migrates_and_ids_are_preserved (test_notifications.NotificationConfigTests.test_legacy_config_migrates_and_ids_are_preserved) ... ok
 test_new_device_does_not_change_existing_recipient_identity (test_notifications.NotificationConfigTests.test_new_device_does_not_change_existing_recipient_identity) ... ok
 test_notification_destinations_and_metadata_restricted (test_notifications.NotificationConfigTests.test_notification_destinations_and_metadata_restricted) ... ok
@@ -259,7 +281,7 @@ test_trigger_ack_reset (test_simulation.StateMachineTests.test_trigger_ack_reset
 test_trigger_reactivates_acknowledged_alarm (test_simulation.StateMachineTests.test_trigger_reactivates_acknowledged_alarm) ... ok
 
 ----------------------------------------------------------------------
-Ran 201 tests in 6.392s
+Ran 218 tests in 6.062s
 
 OK
 ```

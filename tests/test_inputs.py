@@ -239,7 +239,7 @@ class FlowTests(unittest.IsolatedAsyncioTestCase):
         flow = flows.AlarmManagementConfigFlow.async_get_options_flow(None)
         flow.hass = FakeHass()
         result = await flow.async_step_init()
-        self.assertEqual(result["menu_options"], ["status", "inputs", "rules", "outputs"])
+        self.assertEqual(result["menu_options"], ["status", "inputs", "rules", "outputs", "notifications"])
         self.assertEqual((await flow.async_step_inputs())["menu_options"], ["add", "overview", "init"])
 
     async def test_existing_setup_still_requires_simulation_confirmation(self):

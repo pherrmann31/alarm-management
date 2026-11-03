@@ -305,7 +305,7 @@ class OutputValueSensor(OutputSummarySensor):
         self._output_kind = output.kind
         self._output_domain = output.entity_id.split(".", 1)[0] if output.entity_id else None
         self._attr_unique_id = f"{entry.entry_id}_output_{output.id}"
-        label = {"switch": "Schalten", "short_text": "Kurztext", "long_text": "Langtext", "notification":"Push", "overlay":"Overlay"}[output.kind]
+        label = {"switch": "Schalten", "short_text": "Kurztext", "long_text": "Langtext", "notification":"Benachrichtigung", "overlay":"Browser-Pop-up"}[output.kind]
         self._attr_name = f"{label} · {output.name}"
 
     @property
