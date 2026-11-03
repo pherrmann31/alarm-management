@@ -18,7 +18,9 @@
           "alarm": "mdi:alarm-light-outline",
           "acknowledged": "mdi:check-circle-outline",
           "idle": "mdi:shield-check-outline",
-          "format": "mdi:format-letter-case"
+          "format": "mdi:format-letter-case",
+          "delivery": "mdi:devices",
+          "pushover": "mdi:message-alert-outline"
         }
       },
       "output_edit_details": {
@@ -26,7 +28,9 @@
           "alarm": "mdi:alarm-light-outline",
           "acknowledged": "mdi:check-circle-outline",
           "idle": "mdi:shield-check-outline",
-          "format": "mdi:format-letter-case"
+          "format": "mdi:format-letter-case",
+          "delivery": "mdi:devices",
+          "pushover": "mdi:message-alert-outline"
         }
       }
     }

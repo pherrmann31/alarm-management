@@ -7,12 +7,12 @@ from .input_config import InputValidationError
 
 RULE_SECTIONS = {"when": {"input_ids", "mode"}, "then": {"alarm_type", "output_ids"}}
 OUTPUT_SECTIONS = {"alarm": {"alarm_value"}, "acknowledged": {"acknowledged_value"},
-                   "idle": {"idle_value"}, "format": {"encoding"}}
+                   "idle": {"idle_value"}, "format": {"encoding"}, "delivery": {"routes", "title"}, "pushover": {"devices", "priority"}}
 STATUS_LABELS = {"matching": "Ausgelöst", "not_matching": "Normal", "disabled": "Deaktiviert",
                  "missing": "Fehlt", "unknown": "Unbekannt", "unavailable": "Nicht verfügbar", "blocked": "Gesperrt"}
 DELIVERY_LABELS = {"pending": "Wird ausgeführt", "sent": "Rückmeldung offen", "confirmed": "Bestätigt",
                    "failed": "Fehler", "mismatch": "Zustand abweichend", "internal": "Intern aktualisiert", "idle": "Nicht angefordert"}
-KIND_LABELS = {"switch": "Schalten", "short_text": "Kurztext", "long_text": "Langtext"}
+KIND_LABELS = {"switch": "Schalten", "short_text": "Kurztext", "long_text": "Langtext", "notification": "Push-Nachricht", "overlay": "Tablet-Overlay"}
 
 
 def flatten_sections(data, sections):

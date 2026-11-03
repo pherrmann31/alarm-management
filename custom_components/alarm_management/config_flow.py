@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFl
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.selector import EntitySelector, SelectSelector, TextSelector
 
 from .const import ALARM_TYPES, DOMAIN, INPUT_CONFIG_KEY, MAX_INPUTS, MAX_RULES, RULE_CONFIG_KEY
@@ -474,11 +475,38 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         state = self.hass.states.get(entity_id) if entity_id else None
         entry = er.async_get(self.hass).async_get(entity_id) if entity_id else None
         name = ((getattr(state, "attributes", {}) or {}).get("friendly_name") or getattr(entry, "name", None)
-                or getattr(entry, "original_name", None) or {"switch": "Schaltausgang", "short_text": "Kurztext", "long_text": "Langtext"}[kind])
-        return {"name": name[:80], "kind": kind, "entity_id": entity_id, "encoding": "latin-1", "enabled": True,
+                or getattr(entry, "original_name", None) or KIND_LABELS[kind])
+        values = {"name": name[:80], "kind": kind, "entity_id": entity_id, "encoding": "latin-1", "enabled": True,
                 "alarm_value": "on" if kind == "switch" else "{alarmtyp}" if kind == "short_text" else "{alarmtyp}: {regel} – {quelle} ({bereich})",
                 "acknowledged_value": "off" if kind == "switch" else "Quittiert" if kind == "short_text" else "Quittiert: {regel}",
                 "idle_value": "off" if kind == "switch" else "Bereit"}
+        if kind in ('notification','overlay'):
+            values.update(entity_id=None,alarm_value='{alarmtyp}: {regel}\nQuelle: {quelle}\nBereich: {bereich}',acknowledged_value='',idle_value='',
+                          notification={'routes':[], 'title':'Alarm Management', 'devices':'', 'priority':0})
+        return values
+
+    def _notification_choices(self, kind, selected):
+        choices = {}
+        if kind == 'overlay':
+            registry = dr.async_get(self.hass)
+            for device in registry.devices.values():
+                if any(domain=='browser_mod' for domain,_ in device.identifiers):
+                    choices['browser:'+device.id] = device.name_by_user or device.name or device.id
+        else:
+            registry = er.async_get(self.hass)
+            for entity in self.hass.states.async_all('notify'):
+                registered = registry.async_get(entity.entity_id)
+                if registered and registered.platform == 'mobile_app':
+                    choices['entity:'+entity.entity_id] = (entity.attributes.get('friendly_name') or entity.entity_id)+' · HA-App'
+            services = self.hass.services.async_services().get('notify',{})
+            for name in services:
+                if name.startswith('mobile_app_') and not any(key.startswith('entity:') for key in choices):
+                    choices['mobile_app:notify.'+name] = name+' · HA-App (Aktion)'
+                elif name=='pushover' or name.startswith('pushover_'):
+                    choices['pushover:notify.'+name] = name+' · Pushover'
+        for route in selected:
+            choices.setdefault(route,route+' · gespeichert / derzeit nicht gefunden')
+        return SelectSelector({'options':[{'value':key,'label':value} for key,value in choices.items()], 'multiple':True, 'mode':'list'})
 
     async def async_step_output_add(self, user_input=None):
         self._ensure_sources()
@@ -492,7 +520,8 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             else:
                 values = self._output_defaults(kind, user_input.get("entity_id") or None)
                 try:
-                    self._validate_output_target(values)
+                    if kind not in ('notification','overlay'):
+                        self._validate_output_target(values)
                     self._pending_output = values
                     return await self.async_step_output_details()
                 except InputValidationError as err:
@@ -506,14 +535,25 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         entity_field = probatio.Required if values["kind"] == "switch" else probatio.Optional
         marker = (entity_field("entity_id", default=values["entity_id"]) if values["kind"] == "switch" and values.get("entity_id") else
                   entity_field("entity_id", description={"suggested_value": values["entity_id"]}) if values.get("entity_id") else entity_field("entity_id"))
-        schema = {probatio.Required("name", default=values["name"]): str,
-                  marker: EntitySelector({"filter": {"domain": list(DOMAINS[values["kind"]])}})}
+        schema = {probatio.Required("name", default=values["name"]): str}
+        if values['kind'] not in ('notification','overlay'):
+            schema[marker] = EntitySelector({"filter": {"domain": list(DOMAINS[values["kind"]])}})
         if values["kind"] == "short_text":
             schema[probatio.Required("encoding", default=values["encoding"])] = SelectSelector({
                 "options": ["latin-1", "ascii"], "translation_key": "output_encoding", "mode": "dropdown"})
         format_fields = {key: value for key, value in schema.items() if str(getattr(key, "schema", getattr(key, "key", key))) == "encoding"}
         schema = {key: value for key, value in schema.items() if str(getattr(key, "schema", getattr(key, "key", key))) != "encoding"}
         schema[probatio.Required("enabled", default=values["enabled"])] = bool
+        if values['kind'] in ('notification','overlay'):
+            schema = {key:value for key,value in schema.items() if str(getattr(key,'schema',getattr(key,'key',key)))!='entity_id'}
+            config = values['notification']
+            delivery = {probatio.Required('routes',default=config['routes']): self._notification_choices(values['kind'],config['routes']),
+                        probatio.Optional('title',default=config['title']): str}
+            schema[probatio.Required('delivery',default={})] = section(probatio.Schema(delivery),{'collapsed':False})
+            if values['kind']=='notification':
+                pushover = {probatio.Optional('devices',default=config['devices']):str,
+                    probatio.Required('priority',default=str(config['priority'])):SelectSelector({'options':['-2','-1','0','1'],'translation_key':'notification_priority','mode':'dropdown'})}
+                schema[probatio.Required('pushover',default={})] = section(probatio.Schema(pushover),{'collapsed':True})
         for group, field in (("alarm", "alarm_value"), ("acknowledged", "acknowledged_value"), ("idle", "idle_value")):
             field_type = probatio.Required if values["kind"] == "switch" else probatio.Optional
             selector = (SelectSelector({"options": ["on", "off"], "translation_key": "switch_value", "mode": "list"})
@@ -537,6 +577,17 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
                 return self.async_show_form(step_id=step_id, data_schema=self._output_schema(values), errors={"base": err.key},
                                             description_placeholders={"beispiel": "`{regel}`"})
             values.update(user_input)
+            if values['kind'] in ('notification','overlay'):
+                config = dict(values['notification'])
+                for field in ('routes','title','devices','priority'):
+                    if field in user_input:
+                        config[field] = user_input.pop(field)
+                        values.pop(field,None)
+                try:
+                    config['priority'] = int(config['priority'])
+                except (ValueError,TypeError):
+                    config['priority'] = None
+                values['notification'] = config
             # Optional text target can deliberately be cleared.
             if "entity_id" not in user_input:
                 values["entity_id"] = None
@@ -622,7 +673,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         self._ensure_sources()
         if user_input is not None:
             return await self.async_step_outputs()
-        labels = {"switch": "Schaltausgang", "short_text": "Kurztext · 14 Byte", "long_text": "Langtext"}
+        labels = {**KIND_LABELS, "short_text": "Kurztext · 14 Byte"}
         lines = []
         for item in self._outputs:
             used = ", ".join(rule.name for rule in self._rules if item.id in self._bindings.get(rule.id, [])) or "Noch keiner Regel zugeordnet"
@@ -630,7 +681,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             delivery = manager.session.executions.get(item.id, {}) if manager else {}
             state = DELIVERY_LABELS.get(delivery.get("status"), "Noch nicht angefordert")
             lines.append(f"**{markdown_text(item.name)}** · {labels[item.kind]} · {'Aktiviert' if item.enabled else 'Deaktiviert'}\n\n"
-                         f"**Ziel:** {markdown_text(item.entity_id or 'Eigene Statusentität')}\n\n"
+                         f"**Ziel:** {markdown_text(', '.join(item.notification['routes']) if item.notification else item.entity_id or 'Eigene Statusentität')}\n\n"
                          f"**Regeln:** {markdown_text(used)}\n\n**Ausführung:** {state}")
         return self.async_show_form(step_id="output_overview", data_schema=probatio.Schema({}), last_step=False,
                                     description_placeholders={"count": str(len(self._outputs)), "outputs": "\n\n---\n\n".join(lines) or "Noch keine Ausgänge. Einen Schalt- oder Textausgang hinzufügen und einer Regel zuordnen."})

@@ -1,47 +1,51 @@
-# Ergänzung: GitHub-/HACS-Paket
-
-Lokal vorbereitet für pherrmann31/alarm-management. Noch keine Veröffentlichung oder
-HACS-Installation durchgeführt. 172 Offline-Tests nach dem Verpacken erneut bestanden.
-Gegenüber der geprüften v0.7.0 sind im Integrationsordner ausschließlich Projektlinks
-und codeowners in manifest.json geändert. Hinzu kommen hacs.json im Repository-Hauptordner,
-.gitignore und die GitHub-Anleitung. Syntax, JSON und ZIP-Struktur geprüft.
-Eigene Logo-PNGs liegen lokal nicht vor und sind nicht Bestandteil des Pakets.
-
-# Prüfbericht — Alarm Management v0.7.0
+# Prüfbericht — Alarm Management v0.8.0
 
 Datum: 03.11.2026. Ziel: Home Assistant OS / Core 2026.10.4.
 
 ## Bestanden
 
-- 27 Python-Dateien mit Python 3.14.10 auf Syntax geprüft.
-- 5 JSON-Dateien einschließlich icons.json geparst; Manifest und Übersetzungsschlüssel sowie Platzhalter DE/EN geprüft.
-- 172 Offline-Tests bestanden. 160 bisherige Regressionen plus 12 neue Darstellungs-/Formularprüfungen.
-- Verschachtelte Formularabschnitte speichern weiterhin flache Modelle; IDs und Regel-Ausgangsbindungen bleiben erhalten. Fehler öffnen betroffene Ausgabeabschnitte.
-- Status- und Listenansichten führen ohne Speichern ins Menü zurück. Namen werden für Markdown-Übersichten entschärft. Doppelte Eingangsnamen bleiben unterscheidbar.
-- Diagnosekategorien, Hauptanzeigen, neue Namen/Symbole und stabile Unique-IDs geprüft.
-- 16 Backend-/Aktionsdateien bytegleich mit v0.6.0: Alarm-, Speicher-, Regel-, Ausgabe- und Ausführungslogik sowie Aktionen unverändert.
-- 28 übersetzte Optionsschritte mit existierenden Methoden, Menübeschreibungen und gültigen Abschnittssymbol-Zuordnungen.
-- Externe HA-async_call weiterhin ausschließlich in output_executor.py; kein neuer Aktionspfad in der Darstellung.
-- Integrations-ZIP exakt 26 Dateien unter alarm_management/; keine Tests, Bytecodes oder zusätzliche custom_components-Ebene.
-- ZIPs erneut geöffnet, CRC und byteweiser Vergleich mit Quellen geprüft; separate SHA-256-Dateien.
+- 29 Python-Dateien auf Syntax geprüft, Python 3.14.10.
+- JSON, Manifest, services.yaml, HACS-Struktur, Übersetzungsschlüssel/Platzhalter und Icons-Zuordnungen geprüft.
+- 193 Offline-Tests: 172 bisherige Regressionen und 21 neue Benachrichtigungsprüfungen.
+- App-Aktionen, native notify.send_message, Pushover-Parameter und explizit adressierte Browser-Mod-Popups gegen isolierte HA-Doubles geprüft.
+- Vorhandene Ausgabeoptionen Version 1 werden ohne ID-Verlust auf Version 2 ergänzt; ungültige und zukünftige Daten bleiben gesperrt. Store bleibt Schema 5; Serialisierung der Empfängerrecords geprüft.
+- Mehrere Empfänger, renderbare Quellen/Bereiche, Größenlimits, kein Global-Browserziel, HTML-Escaping und eingeschränkte Pushover-Priorität geprüft.
+- Erfolgreiche Empfänger bleiben nach wiederholter Auswertung, Neuladen und manueller Wiederholung ausgelassen. Neue Alarmvorkommen senden erneut.
+- Teilfehler blockieren andere Empfänger nicht. Manuelle Wiederholung nur für fehlgeschlagene/unklare aktuelle Ziele; keine automatische Wiederholung von Pushfehlern.
+- Persistenter pending-Nachweis nach Neustart führt zur sichtbaren Unsicherheit und keiner blinden Wiederholung. Speicherfehler vor Aufruf verhindern den Versand.
+- Kein initialer Ruheversand, auch bei wiederholter Auswertung. Optionale Quittierungs-/Ruhemeldungen einschließlich vorheriger leerer Alarmmeldungen geprüft.
+- Reset während laufender Übermittlung verwirft verbleibende alte Empfänger. Veraltete Empfängerslots werden bereinigt; Verlauf bleibt begrenzt.
+- Konfigurationsdialog mit Mehrfachauswahl und Gerätenamen gegen Schema-/Registry-Doubles geprüft.
+- Externe HA-Aufrufe liegen weiterhin ausschließlich in output_executor.py. Keine eigenen HTTP-Pushclients, keine neuen Zugangsdaten oder Shell-Ausführung.
+- Integrationspaket 29 Dateien unter alarm_management/. GitHub-Paket mit custom_components/alarm_management/, tests/, hacs.json und Dokumenten.
+- Bestehende Logo-PNGs aus deinem lokalen Repository übernommen; Abmessungen: {'icon.png': (265, 262), 'icon@2x.png': (512, 506)}.
+- ZIPs erneut geöffnet, CRC und byteweise Quellgleichheit geprüft; SHA-256-Dateien erzeugt.
 
 ## Grenzen
 
-Tests verwenden ausdrückliche HA-, probatio-, Registry-, Service- und Schema-Nachbildungen.
-Kein echter HA-Start, hassfest, Browser-Rendering oder Gerätetest. Die neue Oberfläche wurde
-hier nicht in einem laufenden Home Assistant visuell geprüft. Native HA-Abschnitte und
-Entitätskategorien folgen der offiziellen Dokumentation; deine HA-Oberfläche bestimmt Layout,
-Farben, Sortierung und Details. Eigene Namen/Icons aus der Entitätsverwaltung können Standardwerte übersteuern.
+Hier ist kein HA installiert. Sämtliche Laufzeittests verwenden ausdrücklich benannte
+HA-, Registry-, Services-, Schema- und Storage-Nachbildungen. Keine Handy-, Tablet-,
+Browser-Mod-, Fully-Kiosk- oder Pushover-Zustellung real getestet. Kein hassfest und
+kein UI-Rendering. Die erfolgreiche Rückkehr einer HA-Aktion beweist keine Anzeige
+oder Kenntnisnahme auf einem Endgerät. Zeitüberschreitung/Absturz können trotz Nachweisen
+zu einem unklaren Versand führen; bewusstes Wiederholen kann dann doppelt zustellen.
 
-V0.7 behält echte Geräteausgaben aus v0.6 bei. Ein Neustart kann bestehende Anforderungen
-weiterbearbeiten. Vor Update Backup erstellen und Testalarme normalisieren.
-Store-Schema bleibt 5. Vorhandene PNGs im brand-Ordner beim Zusammenführen behalten.
+Das Tablet muss im registrierten Browser mit HA verbunden sein. Kein automatisches Wecken,
+kein systemweites Android-Overlay und kein automatisches Schließen eigener Popups.
+Pushover-Kontogeräte stehen nicht als HA-Geräte zur Auswahl; deren exakte Namen müssen
+optional angegeben und real überprüft werden. Andere als notify.pushover*-Aktionsnamen
+werden nicht automatisch erkannt. Diese Einschränkungen sind in README beschrieben.
+
+Keine Veröffentlichung oder Installation wird durch dieses Paketprüfskript ausgeführt.
+Vor HACS-Update Backup erstellen; zuerst mit Testhelfern und gewählten Empfängern abnehmen.
 
 ## Primärquellen
 
-- [HA-Formulare, Abschnitte, Menütexte und Feldhilfen](https://contributors.home-assistant.io/core/integrations/flow-steps/)
-- [HA-Entitätskategorien](https://contributors.home-assistant.io/core/quality-scale/entity-category/)
-- [Core 2026.10.4: section](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/data_entry_flow.py)
+- [Core 2026.10.4 App-Notify](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/components/mobile_app/notify.py)
+- [Core 2026.10.4 Pushover](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/components/pushover/notify.py)
+- [HA-App-Dokumentation](https://companion.home-assistant.io/docs/notifications/notifications-basic/)
+- [Browser-Mod-Aktionen](https://github.com/thomasloven/hass-browser_mod/blob/master/documentation/services.md)
+- [Browser-Mod-Zielauflösung](https://github.com/thomasloven/hass-browser_mod/blob/master/custom_components/browser_mod/service.py)
 
 ## Testausgabe
 
@@ -96,6 +100,27 @@ test_text_value_is_really_sent_to_text_service (test_live_outputs.LiveExecutionT
 test_legacy_plan_status_is_relabelled_and_invalid_owned_record_rejected (test_live_outputs.LiveMigrationTests.test_legacy_plan_status_is_relabelled_and_invalid_owned_record_rejected) ... ok
 test_owned_output_target_cannot_be_silently_changed (test_live_outputs.LiveMigrationTests.test_owned_output_target_cannot_be_silently_changed) ... ok
 test_v05_store_preserves_alarms_and_relabels_plans (test_live_outputs.LiveMigrationTests.test_v05_store_preserves_alarms_and_relabels_plans) ... ok
+test_legacy_config_migrates_and_ids_are_preserved (test_notifications.NotificationConfigTests.test_legacy_config_migrates_and_ids_are_preserved) ... ok
+test_new_device_does_not_change_existing_recipient_identity (test_notifications.NotificationConfigTests.test_new_device_does_not_change_existing_recipient_identity) ... ok
+test_notification_destinations_and_metadata_restricted (test_notifications.NotificationConfigTests.test_notification_destinations_and_metadata_restricted) ... ok
+test_overlay_never_has_empty_or_global_targets (test_notifications.NotificationConfigTests.test_overlay_never_has_empty_or_global_targets) ... ok
+test_priority_two_and_unapproved_metadata_are_rejected (test_notifications.NotificationConfigTests.test_priority_two_and_unapproved_metadata_are_rejected) ... ok
+test_shared_alarm_content_and_size_limits (test_notifications.NotificationConfigTests.test_shared_alarm_content_and_size_limits) ... ok
+test_idle_installation_and_disabled_output_are_silent (test_notifications.NotificationExecutionTests.test_idle_installation_and_disabled_output_are_silent) ... ok
+test_multiple_devices_receive_rendered_message_and_no_device_state_writes (test_notifications.NotificationExecutionTests.test_multiple_devices_receive_rendered_message_and_no_device_state_writes) ... ok
+test_new_identical_alarm_occurrence_is_sent_again (test_notifications.NotificationExecutionTests.test_new_identical_alarm_occurrence_is_sent_again) ... ok
+test_optional_acknowledgement_and_reset_messages (test_notifications.NotificationExecutionTests.test_optional_acknowledgement_and_reset_messages) ... ok
+test_overlay_uses_explicit_browser_device_and_escapes_html (test_notifications.NotificationExecutionTests.test_overlay_uses_explicit_browser_device_and_escapes_html) ... ok
+test_partial_failure_does_not_resend_successful_recipient (test_notifications.NotificationExecutionTests.test_partial_failure_does_not_resend_successful_recipient) ... ok
+test_pushover_has_explicit_device_and_non_emergency_priority (test_notifications.NotificationExecutionTests.test_pushover_has_explicit_device_and_non_emergency_priority) ... ok
+test_removed_recipients_are_pruned_without_removing_history (test_notifications.NotificationExecutionTests.test_removed_recipients_are_pruned_without_removing_history) ... ok
+test_repeat_refresh_reload_and_successful_manual_retry_do_not_repeat_push (test_notifications.NotificationExecutionTests.test_repeat_refresh_reload_and_successful_manual_retry_do_not_repeat_push) ... ok
+test_reset_during_inflight_notification_drops_remaining_old_recipients (test_notifications.NotificationExecutionTests.test_reset_during_inflight_notification_drops_remaining_old_recipients) ... ok
+test_reset_messages_work_after_silent_alarm_and_acknowledgement (test_notifications.NotificationExecutionTests.test_reset_messages_work_after_silent_alarm_and_acknowledgement) ... ok
+test_storage_failure_prevents_any_notification (test_notifications.NotificationExecutionTests.test_storage_failure_prevents_any_notification) ... ok
+test_unknown_pending_after_restart_does_not_blindly_send (test_notifications.NotificationExecutionTests.test_unknown_pending_after_restart_does_not_blindly_send) ... ok
+test_browser_devices_have_names_and_multiple_selection (test_notifications.NotificationFlowTests.test_browser_devices_have_names_and_multiple_selection) ... ok
+test_native_app_entities_are_selectable_by_friendly_name (test_notifications.NotificationFlowTests.test_native_app_entities_are_selectable_by_friendly_name) ... ok
 test_all_kinds_roundtrip_stable_ids (test_outputs.OutputConfigTests.test_all_kinds_roundtrip_stable_ids) ... ok
 test_duplicate_targets_and_invalid_bindings_rejected (test_outputs.OutputConfigTests.test_duplicate_targets_and_invalid_bindings_rejected) ... ok
 test_empty_namespace_added_once_and_unknown_version_rejected (test_outputs.OutputConfigTests.test_empty_namespace_added_once_and_unknown_version_rejected) ... ok
@@ -220,7 +245,7 @@ test_trigger_ack_reset (test_simulation.StateMachineTests.test_trigger_ack_reset
 test_trigger_reactivates_acknowledged_alarm (test_simulation.StateMachineTests.test_trigger_reactivates_acknowledged_alarm) ... ok
 
 ----------------------------------------------------------------------
-Ran 172 tests in 0.732s
+Ran 193 tests in 0.809s
 
 OK
 ```

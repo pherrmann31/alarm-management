@@ -1,7 +1,7 @@
 """Alarm Management constants."""
 
 DOMAIN = "alarm_management"
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 STORAGE_VERSION = 5
 SIGNAL_UPDATED = f"{DOMAIN}_updated"
 SERVICES = ("trigger_test", "acknowledge", "reset")
@@ -16,6 +16,6 @@ RULE_CONFIG_KEY = "rule_config"
 RULE_CONFIG_VERSION = 1
 MAX_RULES = 30
 OUTPUT_CONFIG_KEY = "output_config"
-OUTPUT_CONFIG_VERSION = 1
+OUTPUT_CONFIG_VERSION = 2
 MAX_OUTPUTS = 20
 MAX_LONG_TEXT = 4096

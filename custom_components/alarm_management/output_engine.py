@@ -5,6 +5,7 @@ from string import Formatter
 
 from .const import HISTORY_LIMIT, MAX_LONG_TEXT
 from .output_config import template_fields
+from .notification import alarm_context
 
 
 def _unique(values):
@@ -54,6 +55,10 @@ def plan_outputs(outputs, bindings, rules, session, targets=None):
                     record["error"] = "unsupported_character"
             elif "\x00" in value:
                 record["error"] = "invalid_text_character"
+            if output.kind in ('notification', 'overlay'):
+                title = Formatter().vformat(output.notification['title'], (), alarm_context(alarms,phase))
+                if len(value) > 1024 or len(title) > 80:
+                    record['error'] = 'notification_too_long'
             if output.entity_id and not record["error"]:
                 if not target.get("min_length", 0) <= len(value) <= target.get("max_length", 255):
                     record["error"] = "target_text_length"

@@ -15,6 +15,7 @@ from .session import apply_action, reconcile
 from .storage import async_load_session, create_store
 from .rule_engine import evaluate_rules
 from .output_engine import apply_output_plan
+from .notification import delivery_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -92,6 +93,9 @@ class AlarmManager:
     async def _commit(self, candidate):
         # Delivery results may arrive while an earlier input snapshot awaits a disk retry.
         candidate.executions = deepcopy(self.session.executions)
+        valid_children = {delivery_id(output.id,route) for output in self.outputs if output.notification for route in output.notification['routes']}
+        candidate.executions = {key: value for key,value in candidate.executions.items()
+                                if '_notify_' not in key or key in valid_children}
         candidate.delivery_history = deepcopy(self.session.delivery_history)
         targets = self.output_targets.snapshot if self.output_targets is not None else None
         candidate = apply_output_plan(candidate, self.outputs, self.output_bindings, self.rules, dt_util.utcnow().isoformat(), targets)

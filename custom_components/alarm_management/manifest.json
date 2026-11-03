@@ -1,7 +1,7 @@
 {
   "domain": "alarm_management",
   "name": "Alarm Management",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "config_flow": true,
   "documentation": "https://github.com/pherrmann31/alarm-management",
   "integration_type": "service",
