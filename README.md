@@ -1,102 +1,193 @@
-# Alarm Management v0.7.0 — übersichtliche Konfiguration
+# Alarm Management v0.8.2 — Push und Tablet-Overlay
 
-Für Home Assistant OS / Core 2026.10.4. Dieses Update überarbeitet die normale
-HA-Konfiguration und die Darstellung der Entitäten. Echte Geräteausgaben aus v0.6
-bleiben aktiv. Alarm-, Regel-, Speicher- und Ausführungslogik wurden nicht verändert.
+Für Home Assistant OS / Core 2026.10.4. Eingänge sammeln Signale, Regeln werten sie aus,
+Ausgänge verteilen die passenden Zustände und Nachrichten. Diese Version ergänzt echte
+Benachrichtigungen neben den bisherigen Schalt- und Textausgängen.
 
-## Installation über HACS
+## Korrektur in v0.8.2 — Hänger beim Speichern/Neuladen
 
-Dieses öffentliche Repository lässt sich als benutzerdefiniertes HACS-Repository
-vom Typ **Integration** hinzufügen: https://github.com/pherrmann31/alarm-management
+Ein mit v0.8.1 reproduzierter Fehler betraf die Verwaltung sofort abgeschlossener
+Ausgabeaufgaben. HA startet diese Aufgaben standardmäßig sofort (eager_start=True).
+Eine Aufgabe konnte sich bereits austragen, bevor sie in der Liste eingetragen war.
+Beim anschließenden Neuladen wartete drain endlos auf den bereits fertigen Eintrag.
+Weil diese Schleife nicht mehr auf die Ereignisschleife zurückgab, konnte HA insgesamt
+nicht mehr reagieren. Das ist ein Fehler der Integration, kein Fehler der Geräteauswahl.
 
-Anschließend in HACS **Alarm Management** herunterladen und Home Assistant neu starten.
-Bei der erstmaligen Einrichtung zusätzlich unter Geräte & Dienste die Integration hinzufügen.
-Bei einer bereits vorhandenen manuellen Installation den bestehenden Eintrag behalten.
-Ausführliche Erstveröffentlichung und Übernahme: [GITHUB-ANLEITUNG.md](GITHUB-ANLEITUNG.md).
-Der Code steuert konfigurierte Ausgänge tatsächlich; vor Übernahme Backup erstellen.
+V0.8.2 räumt erledigte Aufgaben nach Registrierung über einen Abschluss-Callback auf.
+Zusätzlich entfernt drain fertige Einträge, bevor es wartet. Vier neue Prüfungen nutzen
+Pythons echten eager_task_factory und einen separaten Prozess als Zeitwächter.
+Der alte Ablauf ließ sich dabei bis zum externen Timeout reproduzieren; der neue beendet
+unveränderte Ausgaben, stille Nachrichten und das Entladen ohne blockierte Ereignisschleife.
 
-## Manuelles Update von v0.6.0
+Die tatsächliche Ursache in einer konkreten HA-Installation muss bei verbleibenden
+Problemen mit deren Protokollen abgeglichen werden. Kein echter HA-Start wurde hier getestet.
+Die Formular-Korrektur aus v0.8.1 ist enthalten.
 
-1. HA-Backup erstellen. Testeingänge ausschalten und Testalarme zurücksetzen.
-   Bestehende aktive Anforderungen können nach einem Neustart weiter ausgeführt werden.
-2. `alarm_management-v0.7.0.zip` am PC entpacken. Den enthaltenen Ordner
-   `alarm_management` nach `/config/custom_components/` kopieren und vorhandene Dateien
-   ersetzen/zusammenführen. Ziel: `/config/custom_components/alarm_management/manifest.json`.
-   Es darf kein weiterer Ordner `alarm_management` darunter entstehen.
-3. **Deine vorhandenen PNGs unter `brand/` behalten.** Den Ordner zusammenführen,
-   nicht erst löschen. Das Paket enthält dort nur die Anleitung und überschreibt keine PNGs.
-4. Home Assistant vollständig neu starten, Browser mit Strg+F5 aktualisieren.
-5. Unter Einstellungen → Geräte & Dienste → Alarm Management die Version 0.7.0 prüfen
-   und über das Zahnrad die Konfiguration öffnen. Die vorhandene Integration behalten.
+Falls HA nach einem Neustart wieder erreichbar ist: vorerst nichts in der betroffenen
+Integration speichern oder deaktivieren. Zuerst Backup erstellen, v0.8.2 über HACS
+herunterladen und HA vollständig neu starten. Erst nach Anzeige von Version 0.8.2
+mit Testhelfern wieder einen Speichervorgang prüfen. Bestehende Einstellungen behalten.
 
-Eingänge, Regeln, Ausgänge, Zuordnungen, gespeicherte Alarme und Entitäts-IDs bleiben
-erhalten. Store-Schema bleibt 5; es gibt gegenüber v0.6 keine neue Datenmigration.
-V0.6 unterstützt weiterhin Migrationen aus älteren Store-Schemata 1–4. Bei einem
-Update direkt aus v0.5 oder älter deshalb auch den Abschnitt zu echten Ausgaben lesen.
+## Korrektur in v0.8.1
 
-## Was jetzt übersichtlicher ist
+Leere Standardwerte an den äußeren Formularabschnitten verhinderten in v0.8.0 die
+Initialisierung der inneren Felder. Dadurch blieb unter anderem die Pflichtauswahl
+Pushover-Priorität leer, obwohl der Abschnitt für normale Handy-Nachrichten optional ist.
+Das konnte trotz korrekt gewähltem Handy die Meldung „Nicht alle Pflichtfelder sind
+ausgefüllt“ auslösen. Der Fehler lag im Formular der Integration.
 
-- Hauptmenü mit aktuellem Alarmzustand, Anzahl der Alarme sowie Eingängen, Regeln und Ausgängen.
-- **Status & Überblick:** Momentaufnahme mit Alarmquellen, ausgelösten Regeln und Fehlerzahlen.
-- Kürzere Dialogtexte, Erläuterungen direkt an den Feldern und beschreibende Menüuntertitel.
-- **Regeln:** oben Name/Aktivierung, darunter **Wenn …** mit Eingängen und UND/ODER
-  sowie **Dann …** mit Alarmtyp und Ausgangszuordnung.
-- **Ausgänge:** oben Name/Ziel/Aktivierung. Werte für **Bei Alarm**, **Nach Quittierung**
-  und **In Ruhe / nach Reset** in eigenen Abschnitten. Quittierung und Ruhe sind anfangs
-  eingeklappt; beim Kurztext ebenso der Zeichensatz. Ein Fehler öffnet den betroffenen Abschnitt.
-- Eingangsübersicht mit Zustand und Bereich; Regelübersicht mit Wenn/Dann und Ausgängen;
-  Ausgangsübersicht mit Typ, Ziel, Regelbindung und Ausführungsstatus.
-- **Weiter** führt aus den Übersichten zurück ins jeweilige Menü, ohne zu speichern
-  oder neu zu laden. Statuswerte sind Momentaufnahmen und werden beim Öffnen ermittelt.
-- Mehrere neue Einträge lassen sich wie bisher nacheinander anlegen und gemeinsam speichern.
+V0.8.1 lässt HA die inneren Werte initialisieren: normale Pushover-Priorität, Titel,
+Nachrichtentexte sowie vorhandene Regel-/Formatwerte bleiben dadurch vorausgefüllt.
+Vier Regressionstests berücksichtigen jetzt die tatsächliche Initialisierungsreihenfolge
+des HA-Frontends, die in den bisherigen Flow-Doubles fehlte. Keine Änderung der
+Versandlogik oder des Datenformats gegenüber v0.8.0.
 
-## Darstellung der Entitäten
+Nach dem Update HA neu starten und den alten geöffneten Konfigurationsdialog schließen.
+Den Dialog neu öffnen; ein normaler Handy-Ausgang kann ohne Öffnen des Pushover-Abschnitts
+gespeichert werden. Dazu Empfänger auswählen und unter Bei Alarm z. B. Testalarm eingeben.
 
-Die Geräteseite zeigt die zentralen Anzeigen und Bedienknöpfe im Hauptbereich.
-Zähler und Verläufe sind als Diagnose kategorisiert und stehen im HA-Bereich **Diagnose**.
-Das beeinflusst auch automatisch erzeugte Dashboard-Ansichten. Vorhandene manuelle
-Dashboard-Karten und Automationen behalten ihre Entitäts-IDs.
+## Neu
 
-| Hauptanzeigen | Diagnose |
-| --- | --- |
-| Alarmstatus mit Zustandssymbol | Ausgelöste Eingänge |
-| Alarmquellen, Bereiche, Alarmregeln | Erfüllte Regeln |
-| Ausgabestatus und einzelne Ausgangsanzeigen | Alarmverlauf, Ausgabeverlauf |
-| Quittieren, Reset, Ausgaben erneut versuchen | |
+- Ausgang **Push-Nachricht** mit Mehrfachauswahl vorhandener HA-App-Ziele.
+- Ausgang **Tablet-Overlay** mit Mehrfachauswahl registrierter Browser-Mod-Geräte.
+- Titel und Nachricht je Ausgang frei anpassbar, mit den bekannten Platzhaltern
+  `{regel}`, `{quelle}`, `{bereich}`, `{alarmtyp}`, `{status}`.
+- Optional eigene Nachrichten nach Quittierung und Reset; standardmäßig leer.
+- Bis zu 20 Empfänger je Nachrichtenausgang. Dieselbe Ausgangsdefinition kann wie bisher
+  mehreren Regeln zugeordnet werden; ihre aktuellen Alarme werden zusammengefasst.
+- Pushover über vorhandene notify.pushover-/notify.pushover_*-Aktionen; optionale
+  Gerätenamen und Priorität -2 bis 1. Keine API-Schlüssel in dieser Integration.
+- Persistenter Versandnachweis je Empfänger und Alarmvorkommen, Fehler im Ausgabeverlauf
+  und in recipient_status der Ausgangsanzeige.
 
-Einzelne Ausgangsanzeigen heißen standardmäßig `Schalten · Name`, `Kurztext · Name`
-oder `Langtext · Name`. Sirenen, Leuchten und Texttypen erhalten passende Symbole,
-Ausgabefehler ein Warnsymbol. Eigene Namen und Symbole aus der HA-Entitätsverwaltung
-können diese Standardwerte übersteuern. Sie werden absichtlich nicht gelöscht.
-Falls ein alter Name bleibt, in der jeweiligen Entität den eigenen Namenswert leeren,
-um wieder den Standard zu verwenden; die Entitäts-ID dabei beibehalten.
+## GitHub/HACS-Update
 
-Es handelt sich um native HA-Dialoge und Kategorien. Kein eigener Dashboard- oder
-Frontend-Baustein: Farben, Kartengestaltung, Reihenfolge und der kleine Dienstzeilen-Icon
-werden von Home Assistant festgelegt. Das vorhandene große Integrationslogo bleibt erhalten.
+Das Repository ist https://github.com/pherrmann31/alarm-management.
+Neue Versionen werden erst nach bewusstem Veröffentlichen eines passenden Releases
+in HACS angeboten. Ein neuer Commit auf einem Entwicklungszweig ist noch kein Release.
 
-## Was gegenüber den bisherigen Plänen umgesetzt ist
+Vor Update vollständiges HA-Backup erstellen und Testalarme normalisieren.
+Nach Installation von v0.8.2 HA vollständig neu starten, bestehende Integration behalten.
+Eingänge, Regeln, IDs und vorhandene Ausgangseinstellungen werden übernommen.
+Alte Ausgangsoptionen Version 1 werden verlustfrei auf Version 2 ergänzt; Store-Schema
+bleibt 5. Neue Empfängernachweise nutzen den vorhandenen atomaren Store. Für Downgrade
+auf v0.7 das vorherige vollständige Backup wiederherstellen.
+Aktive gespeicherte Alarme können nach Zuordnung neuer Nachrichtenausgänge sofort senden.
 
-Eingänge, bearbeitbare UND/ODER-Regeln, gespeicherte Alarme, Quellen/Bereiche, Quittierung,
-Reset, begrenzte Verläufe, frei zugeordnete Schalt-/Textausgänge und echte Ausführung
-stammen aus den bisherigen Versionen. V0.7 ergänzt deren Konfiguration und Anzeige.
-Es kommen keine neuen Alarmbedingungen oder Geräteaktionen hinzu. Erweiterungen wie
-Zeitpläne, Prioritäten und Einzelalarm-Reset bleiben offen; siehe Grenzen am Ende.
+## Handy-Push einrichten
 
-## Kurzer Oberflächentest nach dem Update
+1. Die HA-App auf dem Handy anmelden und Benachrichtigungen im Betriebssystem zulassen.
+2. Unter Alarm Management → Konfigurieren → Ausgänge → Hinzufügen **Push-Nachricht** wählen.
+   Das Schalt-/Text-Zielfeld im ersten Schritt leer lassen.
+3. Unter **Geräte & Nachricht** ein oder mehrere Handys auswählen und den Titel anpassen.
+   Native HA-App-Entitäten erscheinen bevorzugt mit Namen. Ältere mobile_app-Aktionen
+   dienen als Fallback. Nicht zwei Darstellungen desselben Handys auswählen.
+4. Unter **Bei Alarm** die Nachricht eingeben, z. B.:
 
-1. Eingang öffnen: Name, Ziel, Rohwert und Aktivierung müssen stimmen.
-2. Regel öffnen: unter Wenn die bisherigen Eingänge/Verknüpfung, unter Dann Alarmtyp
-   und Ausgänge prüfen. Ohne Änderung schließen.
-3. Ausgang öffnen: alle drei Wertabschnitte aufklappen, beim Kurztext Zeichensatz prüfen.
-4. Mit eigenen Testhelfern einen Eingang auslösen. Alarmstatus, Quelle, Bereich,
-   Regel und tatsächliche Zielzustände prüfen. Danach quittieren und zurücksetzen.
-5. Status-/Listenübersichten öffnen und mit Weiter zurückgehen; dabei dürfen keine
-   Optionen gespeichert werden. Diagnosebereich und Ausgangssymbole prüfen.
+   `{alarmtyp}: {regel}`
 
-172 Offline-Tests und Syntax-/Paketprüfung bestanden. Die konkrete Darstellung im
-laufenden Home Assistant wurde hier nicht visuell getestet. Der separate Prüfbericht
-beschreibt genau die durchgeführten Prüfungen und ihre Grenzen.
+   `Quelle: {quelle}`
+
+   `Bereich: {bereich}`
+
+5. Quittierungs-/Ruhemeldungen nur bei Bedarf füllen. Leer bedeutet: nichts senden.
+6. Speichern und den neuen Ausgang in der gewünschten Regel unter **Dann …** zuordnen.
+
+Titel höchstens 80, Nachricht höchstens 1024 Zeichen nach Platzhalterersetzung.
+Zu lange Nachrichten werden als Fehler angezeigt und nicht still gekürzt.
+Nur normale Textnachrichten; keine App-Steuerbefehle, Bilder, Aktionsknöpfe oder
+iOS-/Android-spezifischen Critical-Alert-Parameter in dieser Version.
+Umbenannte App-Entitäten bei Bedarf in der Geräteauswahl neu auswählen.
+
+## Tablet-Overlay einrichten
+
+1. Das HA-Dashboard im Fully Kiosk Browser des Tablets öffnen. Browser Mod muss
+   genau in diesem Browser registriert und mit HA verbunden sein.
+2. Dem Browser-Mod-Gerät in HA einen erkennbaren Namen geben, z. B. Flur Tablet.
+3. Ausgang **Tablet-Overlay** anlegen und im zweiten Schritt gezielt die gewünschten
+   Browser-Mod-Geräte auswählen. Keine Browser-ID abtippen und keine leere Broadcast-Auswahl.
+4. Titel und Nachricht einstellen, speichern und der Regel zuordnen.
+5. Testalarm auslösen und kontrollieren, dass das Popup auf dem richtigen Tablet erscheint.
+
+Das Overlay ist ein Browser-Mod-Popup über dem geöffneten Dashboard. Fully Kiosk muss
+dafür nicht zusätzlich per REST angesprochen werden. Ein ausgeschalteter Bildschirm wird
+nicht automatisch aufgeweckt; außerhalb des verbundenen Dashboards gibt es kein
+systemweites Android-Overlay und keine garantierte spätere Zustellung.
+HTML aus eingegebenen Texten wird als Text dargestellt. Popup schließen quittiert keinen
+Alarm. Quittieren/Reset bleiben Aktionen der Alarmverwaltung. Popups werden nicht automatisch
+beim Reset geschlossen; sie bleiben bis zum Schließen oder bis zur nächsten Popup-Anforderung.
+Andere Browser-Mod-Automationen können das Popup ersetzen.
+
+## Pushover
+
+Vorhandene Pushover-Integration in HA verwenden. In der Push-Geräteauswahl sind
+notify.pushover und notify.pushover_*-Aktionen auswählbar. Anders benannte Pushover-Aktionen
+werden in dieser Version nicht automatisch erkannt.
+
+HA-App und Browser Mod bieten echte Auswahl vorhandener Ziele. Pushover-Kontogeräte
+sind keine HA-Geräte: deren Namen im optionalen Pushover-Feld exakt, mit Kommas ohne
+Leerzeichen eintragen. Leer sendet an alle Geräte des ausgewählten Pushover-Kontos.
+Fehlerhafte Gerätenamen können von Pushover anders behandelt werden als erwartet;
+die tatsächlichen Empfänger vor produktivem Einsatz mit einer Testnachricht prüfen.
+Pushover-spezifische Gerätenamen/Priorität nur verwenden, wenn ein Pushover-Ziel gewählt ist.
+Notfallpriorität 2 mit Dauerwiederholung und Quittierungsbelegen ist noch nicht enthalten.
+
+## Versand, Wiederholungen und Neustart
+
+Vor jedem Empfängeraufruf wird eine Absicht atomar gespeichert. Derselbe Empfänger wird
+für denselben Alarm, Meldungsinhalt und Zustand nach erfolgreicher HA-Übergabe nicht bei
+jeder Auswertung oder beim Neuladen erneut angesprochen. Ein neuer Alarm nach Reset
+erzeugt ein neues Vorkommen. Weitere Quellen/Regeln oder geänderte Meldungsinhalte können
+eine neue zusammengefasste Nachricht auslösen. Änderungen eines anderen Empfängers
+allein wiederholen erfolgreich bearbeitete Ziele nicht.
+
+Einzelne Empfängerfehler blockieren die anderen nicht. Nachrichten werden nach Fehlern
+oder einem unklaren Versand nicht automatisch wiederholt. **Ausgaben erneut versuchen**
+fordert nur fehlgeschlagene/unklare Ziele der aktuellen Meldung neu an; bereits erfolgreich
+an HA übergebene Empfänger werden ausgelassen. Bei Timeout oder Absturz zwischen Aufruf
+und Ergebnisspeicherung kann dieser bewusste erneute Versuch dennoch eine doppelte
+Meldung erzeugen. Es gibt keine garantierte Exactly-once-Zustellung.
+
+Nach einem Neustart bleibt eine gespeicherte, aber nicht abgeschlossene Versandabsicht
+sichtbar unklar/fehlerhaft, statt unbemerkt erneut gesendet zu werden. Nicht begonnene
+Empfänger dürfen noch bearbeitet werden. Beim HA-Stopp werden keine neuen Aufrufe
+begonnen. Ein schon laufender Aufruf lässt sich beim Reset nicht zurückholen; verbleibende
+veraltete Empfänger werden übersprungen. Keine automatische Ruhemeldung bei Installation.
+
+**An HA übergeben** bedeutet nur, dass die HA-Aktion ohne Fehler zurückkam. Es beweist
+nicht Empfang, Anzeige oder Lesen auf dem Endgerät. Browser Mod kann einen nicht
+verbundenen Browser nicht nachträglich benachrichtigen. Für App/Pushover gelten deren
+Netzwerkverbindung, Berechtigungen und Anbieterlimits.
+
+## Abnahme zuerst mit Testhelfern
+
+1. Einen Push-Ausgang für dein Handy und einen Overlay-Ausgang für genau ein Tablet anlegen.
+2. Beide einer Testregel zuordnen und mit einem Testhelfer auslösen.
+3. Text, Quelle, Bereich und tatsächliche Empfänger kontrollieren.
+4. Eingang wieder normal setzen: keine doppelte Alarmmeldung erwarten.
+5. Quittieren/Reset mit leeren Meldungen prüfen: keine Nachricht. Danach optionale Texte testen.
+6. Zwei Handys wählen, einen Empfänger nicht verfügbar machen und Fehleranzeige/gezielte
+   manuelle Wiederholung prüfen. Bereits erfolgreiche Empfänger dürfen nicht erneut senden.
+7. Aktiven Alarm neu laden/neustarten: keine unbeabsichtigte Doppelmeldung.
+8. Bestehende Schalt- und Textausgänge ebenfalls prüfen.
+
+201 Offline-Tests bestanden; kein echter HA-/Browser-/Handy-/Pushover-Test hier ausgeführt.
+Die Geräteabnahme erfolgt in deiner Installation. Details: [VALIDATION.md](VALIDATION.md).
+
+## Noch offen
+
+Alarmprioritäten und Eskalationsketten, zeitabhängige Empfänger, Einzelalarm-Quittierung,
+Aktionsknöpfe in Pushmeldungen, bestätigte Zustellung, Pushover-Notfallwiederholung,
+automatisches Wecken des Tablets und ein gezieltes automatisches Schließen eigener Popups.
+
+## Quellen
+
+- [HA-App-Benachrichtigungen](https://companion.home-assistant.io/docs/notifications/notifications-basic/)
+- [Pushover in HA](https://www.home-assistant.io/integrations/pushover/)
+- [Browser-Mod-Aktionen und Zielauswahl](https://github.com/thomasloven/hass-browser_mod/blob/master/documentation/services.md)
+- [Core 2026.10.4 MobileAppNotifyEntity](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/components/mobile_app/notify.py)
+
+## Bisherige Geräteausgaben und Sicherheits-/Testhinweise
 
 ## Unterstützte echte Ausgaben
 
@@ -238,7 +329,7 @@ auch im brand-Ordner. Danach HA neu starten und Browser mit Strg+F5 aktualisiere
 
 ## Prüfstand und praktische Grenzen
 
-Siehe `VALIDATION-v0.7.0.md`. Alle Prüfungen hier verwenden eine lokale Python-Umgebung und
+Siehe `VALIDATION.md`. Alle Prüfungen hier verwenden eine lokale Python-Umgebung und
 ausdrücklich benannte HA-Testdoubles. Kein echter HA-Core-Start, keine UI-/Dateispeichermigration
 und keine Hardware wurden hier getestet. „Echte Ausführung implementiert“ ist keine Aussage,
 dass dein System damit bereits abgenommen, ausfallsicher oder als Alarmanlage zertifiziert ist.

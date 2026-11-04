@@ -21,6 +21,8 @@ def values(kind="switch", **updates):
     data = {"name": "Sirene", "kind": kind, "entity_id": "input_boolean.siren" if kind == "switch" else None,
             "enabled": True, "encoding": "latin-1", "alarm_value": "on" if kind == "switch" else "FEUER",
             "acknowledged_value": "off" if kind == "switch" else "Quittiert", "idle_value": "off" if kind == "switch" else "Bereit"}
+    if kind in ('notification','overlay'):
+        data['notification']={'routes':['mobile_app:notify.mobile_app_phone'] if kind=='notification' else ['browser:'+'a'*32], 'title':'Alarm', 'devices':'', 'priority':0}
     return {**data, **updates}
 
 
@@ -190,7 +192,7 @@ class OutputFlowTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(flow.hass.entry.options, {})
         result = await flow.async_step_output_finish()
         outputs, _ = config.load_output_config(result["data"], [])
-        self.assertEqual(len(outputs), 3)
+        self.assertEqual(len(outputs), len(config.KINDS))
 
     async def test_prefilled_target_name_and_edit_keeps_id(self):
         flow = self.flow()

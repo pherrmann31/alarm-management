@@ -315,7 +315,7 @@
       },
       "output_add": {
         "title": "Choose output type and target",
-        "description": "Switch outputs need a switch, light or siren entity. Text targets are optional: without a target only the local status entity updates. The next step prefills the name.",
+        "description": "Choose a type. Switch/text targets can be selected here. For push and overlay leave the target empty here; choose devices in the next step.",
         "data": {
           "kind": "Output type",
           "entity_id": "Target entity"
@@ -323,7 +323,7 @@
       },
       "output_details": {
         "title": "Configure output",
-        "description": "Set values for each alarm phase. Enabled, assigned targets are actually switched or written.",
+        "description": "Set values for each alarm phase. Push and overlay are requested once per recipient and alarm occurrence. An empty message means: send nothing in this phase.",
         "data": {
           "name": "Name",
           "entity_id": "Target entity",
@@ -342,7 +342,7 @@
               "alarm_value": "Value"
             },
             "data_description": {
-              "alarm_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "alarm_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply. Push/overlay: up to 1024 characters. Empty = no message. Acknowledgement and idle are initially empty."
             }
           },
           "acknowledged": {
@@ -352,7 +352,7 @@
               "acknowledged_value": "Value"
             },
             "data_description": {
-              "acknowledged_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "acknowledged_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply. Push/overlay: up to 1024 characters. Empty = no message. Acknowledgement and idle are initially empty."
             }
           },
           "idle": {
@@ -362,7 +362,7 @@
               "idle_value": "Value"
             },
             "data_description": {
-              "idle_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "idle_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply. Push/overlay: up to 1024 characters. Empty = no message. Acknowledgement and idle are initially empty."
             }
           },
           "format": {
@@ -373,13 +373,37 @@
             },
             "data_description": {
               "encoding": "14 bytes are not always 14 characters. Unrepresentable characters produce an error."
+            }
+          },
+          "delivery": {
+            "name": "Devices & message",
+            "description": "Choose recipients explicitly. For one phone, choose its app entity OR its legacy action. Tablet overlays require Browser Mod connected in the open dashboard.",
+            "data": {
+              "routes": "Devices / recipients",
+              "title": "Title"
+            },
+            "data_description": {
+              "routes": "Multiple selection. No all-browser option. Saved unavailable destinations are labelled.",
+              "title": "Up to 80 characters after placeholder substitution, e.g. {beispiel}."
+            }
+          },
+          "pushover": {
+            "name": "Pushover (optional)",
+            "description": "Use only with a selected Pushover destination.",
+            "data": {
+              "devices": "Pushover device names (optional)",
+              "priority": "Pushover priority"
+            },
+            "data_description": {
+              "devices": "Pushover only: exact device names separated by commas without spaces. Empty = all devices of this Pushover account. HA does not expose these account devices in its device picker.",
+              "priority": "Pushover only. Emergency repeating alerts are not enabled in this version."
             }
           }
         }
       },
       "output_edit_details": {
         "title": "Edit output",
-        "description": "Set values for each alarm phase. Enabled, assigned targets are actually switched or written.",
+        "description": "Set values for each alarm phase. Push and overlay are requested once per recipient and alarm occurrence. An empty message means: send nothing in this phase.",
         "data": {
           "name": "Name",
           "entity_id": "Target entity",
@@ -398,7 +422,7 @@
               "alarm_value": "Value"
             },
             "data_description": {
-              "alarm_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "alarm_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply. Push/overlay: up to 1024 characters. Empty = no message. Acknowledgement and idle are initially empty."
             }
           },
           "acknowledged": {
@@ -408,7 +432,7 @@
               "acknowledged_value": "Value"
             },
             "data_description": {
-              "acknowledged_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "acknowledged_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply. Push/overlay: up to 1024 characters. Empty = no message. Acknowledgement and idle are initially empty."
             }
           },
           "idle": {
@@ -418,7 +442,7 @@
               "idle_value": "Value"
             },
             "data_description": {
-              "idle_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "idle_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply. Push/overlay: up to 1024 characters. Empty = no message. Acknowledgement and idle are initially empty."
             }
           },
           "format": {
@@ -429,6 +453,30 @@
             },
             "data_description": {
               "encoding": "14 bytes are not always 14 characters. Unrepresentable characters produce an error."
+            }
+          },
+          "delivery": {
+            "name": "Devices & message",
+            "description": "Choose recipients explicitly. For one phone, choose its app entity OR its legacy action. Tablet overlays require Browser Mod connected in the open dashboard.",
+            "data": {
+              "routes": "Devices / recipients",
+              "title": "Title"
+            },
+            "data_description": {
+              "routes": "Multiple selection. No all-browser option. Saved unavailable destinations are labelled.",
+              "title": "Up to 80 characters after placeholder substitution, e.g. {beispiel}."
+            }
+          },
+          "pushover": {
+            "name": "Pushover (optional)",
+            "description": "Use only with a selected Pushover destination.",
+            "data": {
+              "devices": "Pushover device names (optional)",
+              "priority": "Pushover priority"
+            },
+            "data_description": {
+              "devices": "Pushover only: exact device names separated by commas without spaces. Empty = all devices of this Pushover account. HA does not expose these account devices in its device picker.",
+              "priority": "Pushover only. Emergency repeating alerts are not enabled in this version."
             }
           }
         }
@@ -495,7 +543,9 @@
       "unsupported_character": "Text contains characters outside the chosen encoding.",
       "invalid_output_assignment": "Select existing outputs without duplicates.",
       "output_in_use": "This output is still assigned to rules. Remove those assignments first.",
-      "output_owned": "This target is still controlled by the integration. Reset the alarm or disable the output and wait for the idle value to be confirmed."
+      "output_owned": "This target is still controlled by the integration. Reset the alarm or disable the output and wait for the idle value to be confirmed.",
+      "invalid_notification": "Check recipient selection, title and Pushover settings. Select at least one matching destination.",
+      "notification_too_long": "Shorten the message to 1024 characters; title up to 80 characters after substitution."
     },
     "abort": {
       "invalid_configuration": "Inputs, rules or outputs are invalid or from a newer version. Nothing was overwritten; check logs and backup.",
@@ -528,7 +578,9 @@
       "options": {
         "switch": "Switch output · ON/OFF",
         "short_text": "Short text · at most 14 bytes",
-        "long_text": "Long text"
+        "long_text": "Long text",
+        "notification": "Push notification · HA app / Pushover",
+        "overlay": "Tablet overlay · Browser Mod"
       }
     },
     "output_encoding": {
@@ -541,6 +593,14 @@
       "options": {
         "on": "ON",
         "off": "OFF"
+      }
+    },
+    "notification_priority": {
+      "options": {
+        "-2": "Silent",
+        "-1": "Low",
+        "0": "Normal",
+        "1": "High"
       }
     }
   }

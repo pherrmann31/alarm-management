@@ -315,7 +315,7 @@
       },
       "output_add": {
         "title": "Ausgangstyp und Ziel wählen",
-        "description": "Schaltausgänge benötigen eine Schalter-, Licht- oder Sirenenentität. Bei Texten ist ein Ziel optional: Ohne Ziel wird nur die eigene Statusentität aktualisiert. Der nächste Schritt übernimmt den Namen.",
+        "description": "Typ wählen. Schalt-/Textziele können hier gewählt werden. Bei Push und Overlay das Zielfeld hier leer lassen; die Geräteauswahl folgt im nächsten Schritt.",
         "data": {
           "kind": "Ausgangstyp",
           "entity_id": "Zielentität"
@@ -323,7 +323,7 @@
       },
       "output_details": {
         "title": "Ausgang einstellen",
-        "description": "Werte je Alarmzustand festlegen. Aktivierte, zugeordnete Ziele werden tatsächlich geschaltet oder beschrieben.",
+        "description": "Werte je Alarmzustand festlegen. Push und Overlay werden pro Gerät und Alarmereignis einmal angefordert. Leere Nachricht bedeutet: in diesem Zustand nichts senden.",
         "data": {
           "name": "Name",
           "entity_id": "Zielentität",
@@ -342,7 +342,7 @@
               "alarm_value": "Wert"
             },
             "data_description": {
-              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich. Push/Overlay: höchstens 1024 Zeichen. Leer = keine Nachricht. Beim Anlegen sind Quittierung und Ruhe leer."
             }
           },
           "acknowledged": {
@@ -352,7 +352,7 @@
               "acknowledged_value": "Wert"
             },
             "data_description": {
-              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich. Push/Overlay: höchstens 1024 Zeichen. Leer = keine Nachricht. Beim Anlegen sind Quittierung und Ruhe leer."
             }
           },
           "idle": {
@@ -362,7 +362,7 @@
               "idle_value": "Wert"
             },
             "data_description": {
-              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich. Push/Overlay: höchstens 1024 Zeichen. Leer = keine Nachricht. Beim Anlegen sind Quittierung und Ruhe leer."
             }
           },
           "format": {
@@ -373,13 +373,37 @@
             },
             "data_description": {
               "encoding": "14 Byte sind nicht immer 14 Zeichen. Nicht darstellbare Zeichen werden als Fehler angezeigt."
+            }
+          },
+          "delivery": {
+            "name": "Geräte & Nachricht",
+            "description": "Geräte gezielt auswählen. Für ein Handy nur den App-Eintrag ODER seine ältere Aktion auswählen. Für Tablet-Overlays muss Browser Mod im geöffneten Dashboard verbunden sein.",
+            "data": {
+              "routes": "Geräte / Empfänger",
+              "title": "Titel"
+            },
+            "data_description": {
+              "routes": "Mehrfachauswahl. Keine Auswahl „alle Browser“. Bereits gespeicherte, fehlende Geräte werden gekennzeichnet.",
+              "title": "Bis 80 Zeichen nach Platzhalterersetzung, z. B. {beispiel}."
+            }
+          },
+          "pushover": {
+            "name": "Pushover (optional)",
+            "description": "Nur bei ausgewähltem Pushover-Ziel ausfüllen.",
+            "data": {
+              "devices": "Pushover-Gerätenamen (optional)",
+              "priority": "Pushover-Priorität"
+            },
+            "data_description": {
+              "devices": "Nur Pushover: exakte Gerätenamen mit Komma trennen, ohne Leerzeichen. Leer = alle Geräte dieses Pushover-Kontos. HA stellt diese Kontogeräte nicht als Geräteauswahl bereit.",
+              "priority": "Nur Pushover. Keine Notfall-Dauerwiederholung in dieser Version."
             }
           }
         }
       },
       "output_edit_details": {
         "title": "Ausgang bearbeiten",
-        "description": "Werte je Alarmzustand festlegen. Aktivierte, zugeordnete Ziele werden tatsächlich geschaltet oder beschrieben.",
+        "description": "Werte je Alarmzustand festlegen. Push und Overlay werden pro Gerät und Alarmereignis einmal angefordert. Leere Nachricht bedeutet: in diesem Zustand nichts senden.",
         "data": {
           "name": "Name",
           "entity_id": "Zielentität",
@@ -398,7 +422,7 @@
               "alarm_value": "Wert"
             },
             "data_description": {
-              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich. Push/Overlay: höchstens 1024 Zeichen. Leer = keine Nachricht. Beim Anlegen sind Quittierung und Ruhe leer."
             }
           },
           "acknowledged": {
@@ -408,7 +432,7 @@
               "acknowledged_value": "Wert"
             },
             "data_description": {
-              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich. Push/Overlay: höchstens 1024 Zeichen. Leer = keine Nachricht. Beim Anlegen sind Quittierung und Ruhe leer."
             }
           },
           "idle": {
@@ -418,7 +442,7 @@
               "idle_value": "Wert"
             },
             "data_description": {
-              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich. Push/Overlay: höchstens 1024 Zeichen. Leer = keine Nachricht. Beim Anlegen sind Quittierung und Ruhe leer."
             }
           },
           "format": {
@@ -429,6 +453,30 @@
             },
             "data_description": {
               "encoding": "14 Byte sind nicht immer 14 Zeichen. Nicht darstellbare Zeichen werden als Fehler angezeigt."
+            }
+          },
+          "delivery": {
+            "name": "Geräte & Nachricht",
+            "description": "Geräte gezielt auswählen. Für ein Handy nur den App-Eintrag ODER seine ältere Aktion auswählen. Für Tablet-Overlays muss Browser Mod im geöffneten Dashboard verbunden sein.",
+            "data": {
+              "routes": "Geräte / Empfänger",
+              "title": "Titel"
+            },
+            "data_description": {
+              "routes": "Mehrfachauswahl. Keine Auswahl „alle Browser“. Bereits gespeicherte, fehlende Geräte werden gekennzeichnet.",
+              "title": "Bis 80 Zeichen nach Platzhalterersetzung, z. B. {beispiel}."
+            }
+          },
+          "pushover": {
+            "name": "Pushover (optional)",
+            "description": "Nur bei ausgewähltem Pushover-Ziel ausfüllen.",
+            "data": {
+              "devices": "Pushover-Gerätenamen (optional)",
+              "priority": "Pushover-Priorität"
+            },
+            "data_description": {
+              "devices": "Nur Pushover: exakte Gerätenamen mit Komma trennen, ohne Leerzeichen. Leer = alle Geräte dieses Pushover-Kontos. HA stellt diese Kontogeräte nicht als Geräteauswahl bereit.",
+              "priority": "Nur Pushover. Keine Notfall-Dauerwiederholung in dieser Version."
             }
           }
         }
@@ -495,7 +543,9 @@
       "unsupported_character": "Text enthält Zeichen außerhalb des gewählten Zeichensatzes.",
       "invalid_output_assignment": "Ausgangsauswahl ungültig. Vorhandene Ausgänge ohne Duplikate wählen.",
       "output_in_use": "Der Ausgang wird noch in Regeln verwendet. Dort die Zuordnung zuerst entfernen.",
-      "output_owned": "Dieses Ziel wird noch von der Integration gesteuert. Zuerst Alarm zurücksetzen oder Ausgang deaktivieren und den bestätigten Ruhewert abwarten."
+      "output_owned": "Dieses Ziel wird noch von der Integration gesteuert. Zuerst Alarm zurücksetzen oder Ausgang deaktivieren und den bestätigten Ruhewert abwarten.",
+      "invalid_notification": "Geräteauswahl, Titel oder Pushover-Einstellungen prüfen. Mindestens ein passendes Ziel auswählen.",
+      "notification_too_long": "Nachricht auf höchstens 1024 Zeichen kürzen; Titel höchstens 80 Zeichen nach Ersetzung."
     },
     "abort": {
       "invalid_configuration": "Eingänge, Regeln oder Ausgänge ungültig oder aus neuerer Version. Nichts überschrieben; Protokolle und Backup prüfen.",
@@ -528,7 +578,9 @@
       "options": {
         "switch": "Schaltausgang · EIN/AUS",
         "short_text": "Kurztext · maximal 14 Byte",
-        "long_text": "Langtext"
+        "long_text": "Langtext",
+        "notification": "Push-Nachricht · HA-App / Pushover",
+        "overlay": "Tablet-Overlay · Browser Mod"
       }
     },
     "output_encoding": {
@@ -541,6 +593,14 @@
       "options": {
         "on": "EIN",
         "off": "AUS"
+      }
+    },
+    "notification_priority": {
+      "options": {
+        "-2": "Lautlos",
+        "-1": "Niedrig",
+        "0": "Normal",
+        "1": "Hoch"
       }
     }
   }

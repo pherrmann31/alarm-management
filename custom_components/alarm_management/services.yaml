@@ -13,6 +13,6 @@
   },
   "retry_outputs": {
     "name": "Ausgaben erneut versuchen",
-    "description": "Startet die begrenzten Versuche für aktuell angeforderte oder bereits gesteuerte Ausgänge erneut. Ohne Parameter."
+    "description": "Aktuelle Geräteausgaben erneut versuchen. Für Push/Overlay nur fehlgeschlagene oder unklare Empfänger erneut anfordern; bei unklarem Versand sind doppelte Meldungen möglich."
   }
 }
