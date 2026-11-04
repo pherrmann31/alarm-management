@@ -1,88 +1,157 @@
-# Alarm Management v1.1 – Updateprüfung und Gruppenverwaltung
+# Alarm Management
 
-Version **1.1.0**, Ziel Home Assistant Core 2026.10.4. Reale Geräteaktionen sind aktiviert. Die automatische Aufnahme ist zunächst ausgeschaltet und wird einmal mit passenden Alarmzielen eingerichtet.
+**Alarme sammeln, gemeinsam auswerten und gezielt verteilen – direkt in Home Assistant.**
 
+Alarm Management verbindet Rauchmelder, Hausalarmtaster und weitere Zustandsquellen mit konfigurierbaren Regeln. Diese steuern Sirenen, Statusanzeigen und Benachrichtigungen. Du legst fest, welche Quellen zusammengehören und wer bei einem Alarm informiert wird.
 
-## Änderungen in v1.1.0
+**Dokumentationsstand: v1.1.0 · Home Assistant Core ab 2026.10.4 laut HACS-Konfiguration · Custom Integration in Entwicklung**
 
-- Update von v0.9 mit bestehenden Eingängen, Regeln, Ausgängen und Benachrichtigungen ausdrücklich geprüft. Die IDs und Zuordnungen bleiben erhalten.
-- Gruppen werden beim Update initialisiert und in den Optionen gespeichert. Ältere unvollständige v1-Gruppenentwürfe erhalten fehlende bekannte Standardfelder und Standardgruppen; vorhandene Einstellungen werden nicht überschrieben.
-- Beschädigte Werte oder unbekannte Referenzen werden weiterhin abgelehnt. Die Einrichtung nennt jetzt die betroffene Stufe und die Version, zum Beispiel „Alarm Management 1.1.0: Gruppenkonfiguration …“ oder „gespeicherte Alarmvorfälle …“.
-- Kein Zurücksetzen oder Löschen vorhandener Alarmdaten, keine automatische Aufnahme vor ausdrücklicher Aktivierung.
+[Releases](https://github.com/pherrmann31/alarm-management/releases) · [Fehler melden](https://github.com/pherrmann31/alarm-management/issues) · [Prüfbericht](VALIDATION.md)
 
-## Wichtig bei angezeigter Version 0.7.0
+## So funktioniert es
 
-Wenn HA oben 0.7.0 meldet und der Geräteeintrag 0.9.0, ist alter Integrationscode mit einem gespeicherten neueren Geräteeintrag kombiniert. Das ist kein Beleg, dass v1.0-Code geladen wurde. v0.7 unterstützt das Ausgabeformat der Benachrichtigungen ab v0.8 nicht. Der genaue Fehler im laufenden HA muss bei Bedarf anhand seines Protokolls bestätigt werden.
+**Einzelmelder oder Meldergruppen → Regeln → gespeicherte Alarmvorfälle → Ausgänge und Benachrichtigungen**
 
-Das Tag `v1.1.0` muss auf den Commit mit `custom_components/alarm_management/manifest.json` Version `1.1.0` zeigen. Auf GitHub nach dem Release dessen „Source code (zip)“ öffnen und diese Datei prüfen. Der Release-Titel allein bestimmt den enthaltenen Code nicht. In HACS ausdrücklich `v1.1.0` installieren und anschließend HA vollständig neu starten. Danach müssen sowohl Manifest als auch geladene Integration 1.1.0 melden. Bestehende Tags nicht wiederverwenden oder verschieben.
+Beispiel: Ein Rauchmelder in der Küche löst aus. Die Regel „Feueralarm – alle Rauchmelder“ fordert die Sirene an, schreibt den Alarmtext auf eine Anzeige und benachrichtigt die ausgewählten Handys. Meldet später auch der Flur Rauch, ergänzt dieser Melder den Vorfall derselben Regel.
 
-Wenn der Fehler auch mit geladenem v1.1.0 fortbesteht, die neue genaue Fehlermeldung und den zugehörigen HA-Protokolleintrag prüfen. Keine Dateien in `.storage` von Hand bearbeiten und die Integration nicht löschen.
+| Baustein | Aufgabe | Beispiel |
+| --- | --- | --- |
+| Eingangsquelle | Zustand oder Tastenereignis erfassen | Rauchmelder Küche, Hausalarmtaster Flur |
+| Meldergruppe | Mehrere Eingänge gemeinsam auswerten | Rauchmelder Erdgeschoss |
+| Regel | Bedingungen und Alarmziele verbinden | Mindestens ein Rauchmelder löst aus |
+| Ausgabegruppe | Konfigurierte Ausgänge bündeln | Sirene, Warnlicht und Display |
+| Benachrichtigungsgruppe | Konfigurierte Nachrichten bündeln | Handys der Familie und Wandtablets |
 
-## Enthalten
+## Funktionen
 
-- Einzelquellen und nicht verschachtelte Meldergruppen; mindestens ein oder alle Mitglieder.
-- Geschützte Standardgruppen und automatische Gesamtauswahlen für Rauchmelder und Hausalarmtaster.
-- Automatische Aufnahme bestehender und neuer geeigneter HA-Entitäten während des Betriebs, stabile Identitäten und keine erneute automatische Aufnahme derselben Entität.
-- Rauchmelder anhand `binary_sensor` und Geräteklasse `smoke`. Batterie-Entitäten werden ausdrücklich ausgeschlossen, auch wenn der Name „Smoke Alarm“ enthält.
-- Hausalarm über konkrete Namensmuster bzw. HA-Label-ID und passenden Zustands-/Ereignistyp. MQTT und Zigbee werden über die bereits eingerichteten HA-Integrationen eingebunden.
-- Neue automatische Quellen landen in der passenden Standardgruppe; manuelles Verschieben bleibt erhalten. Gesamtauswahlen behalten die Quelle unabhängig von der Raumgruppe.
-- Ausgabegruppen und Benachrichtigungsgruppen. Eine Regel kann direkte Ausgaben und Gruppen gemeinsam anfordern; doppelte IDs werden zusammengeführt.
-- Automatische Einrichtungsregeln mit ausgewählten Alarmzielen. Bereits aktive neu aufgenommene Rauchmelder werden ausgewertet.
-- Native HA-Ereignis-Entitäten für Taster; neue Ereignisse werden kurz als Eingang ausgewertet und anschließend als Alarmvorfall gespeichert. Alte Ereigniszeitstempel werden beim Neustart nicht erneut ausgelöst.
-- Bestehende Vorfälle, Quittierung, Reset mit Fehlerbegründung, Browser-Pop-up-Quittierung, Ausgabefehler und erneuter Versand fehlgeschlagener Ausgaben bleiben verfügbar.
-- Regelpriorität 0–5 bestimmt die Reihenfolge gemeinsamer Textausgaben. Sie unterdrückt keine anderen Alarmanforderungen.
-- Gemeinsame Schaltausgänge bleiben eingeschaltet, solange mindestens eine zugeordnete Regel EIN anfordert.
-- Eigener Sensor „Gestörte Eingänge“, begrenzte Diagnoseattribute und Protokoll automatischer Aufnahmen.
-- Gruppenvorschau zur Prüfung der Regel- und Ausgabeverteilung ohne Geräteaktionen oder Nachrichtenversand.
+- Einzelne Eingänge sowie Meldergruppen mit „mindestens ein Mitglied“ oder „alle Mitglieder gleichzeitig“.
+- Automatische Aufnahme geeigneter Rauchmelder und Hausalarmtaster nach einmaliger Einrichtung.
+- Standardgruppen für neue Geräte und manuell verwaltete Raumgruppen wie Erdgeschoss oder Obergeschoss.
+- Regeln mit direkten Alarmzielen oder Ausgabe- und Benachrichtigungsgruppen.
+- Gespeicherte Alarmvorfälle mit auslösenden Meldern, Bereichen, Quittierung und Reset.
+- Anzeige gestörter Eingänge sowie Protokolle zu Alarmen, automatischen Aufnahmen und Ausgaben.
+- Vorschau der Verteilung einer Meldergruppe ohne Schaltaktionen oder Nachrichtenversand.
+
+## Voraussetzungen
+
+- Home Assistant mit installierter HACS-Erweiterung für die Installation über HACS.
+- Melder und Taster sind bereits über ihre jeweilige Integration in Home Assistant eingerichtet, beispielsweise MQTT oder Zigbee.
+- Für Handy-Nachrichten: eingerichtete Home-Assistant-Companion-App oder Pushover-Integration.
+- Für Browser-Pop-ups: eingerichtetes Browser Mod und ein verbundenes Dashboard auf dem Zielgerät. Fully Kiosk kann dieses Dashboard anzeigen.
+
+Alarm Management verwendet die in HA vorhandenen Entitäten und Dienste. Die Integration richtet weder die MQTT-Verbindung noch das Zigbee-Netzwerk oder die Herstelleranbindung ein.
+
+## Installation über HACS
+
+1. In HACS das Menü **Benutzerdefinierte Repositories** öffnen.
+2. `https://github.com/pherrmann31/alarm-management` hinzufügen und den Typ **Integration** wählen. Ist das Repository bereits vorhanden, diesen Schritt überspringen.
+3. **Alarm Management** in HACS herunterladen und die gewünschte veröffentlichte Version auswählen.
+4. Home Assistant vollständig neu starten.
+5. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach **Alarm Management** suchen und die Einrichtung abschließen.
+
+Die Integrationsoptionen erreichst du anschließend über das Zahnrad beim Integrationseintrag.
+
+Weitere Hinweise zum Hinzufügen eigener Repositories stehen in der [HACS-Dokumentation](https://www.hacs.xyz/docs/faq/custom_repositories/).
 
 ## Erste Einrichtung
 
-1. Zuerst die benötigten Ausgänge und Benachrichtigungen anlegen. Optional Ausgabe- oder Benachrichtigungsgruppen unter „Gruppen & automatische Aufnahme“ bilden.
-2. „Rauchmelder automatisch aufnehmen“ öffnen. Die gefundenen Rauchalarm-Entitäten prüfen, Alarmziele auswählen und Aufnahme aktivieren.
-3. Dadurch entsteht bzw. aktualisiert sich „Feueralarm – alle Rauchmelder“. Neue passende Geräte werden ohne HA-Neustart aufgenommen; die Suche wird kurz gebündelt ausgeführt.
-4. Gruppen wie Erdgeschoss und Obergeschoss anlegen. Unter „Melder verschieben“ Quellen zuordnen. Die allgemeine Feueralarmregel bleibt wirksam, weil sie „Alle Rauchmelder“ verwendet.
-5. Für zusätzliche Regeln die gewünschten Einzelquellen oder Gruppen auswählen. Gruppenmodus und Regelmodus sind getrennte Bedingungen. Leere oder vollständig unbekannte Gruppen gelten nicht als „alles in Ordnung“.
-6. „Verteilung prüfen“ berechnet einen hypothetischen Alarm aller aktivierten Gruppenmitglieder. Es wird dabei nichts geschaltet oder versendet; echte Zustellung muss separat geprüft werden.
+### 1. Alarmziele vorbereiten
 
-## X-Sense über MQTT
+Unter **Ausgänge verwalten** die gewünschten Schalt- oder Textausgänge anlegen. Unter **Benachrichtigungen** Handys oder Browser auswählen und Nachrichten konfigurieren.
 
-Die bestehende MQTT-Anbindung muss den eigentlichen Rauchalarm als HA-Binärsensor mit Geräteklasse `smoke` bereitstellen. Herstellername oder Gerätebezeichnung allein genügen nicht. Die Entität „Battery Status“ mit „Anzeigen als: Batteriestand“ ist kein Rauchalarmeingang. Geräteraum und Meldername werden aus HA übernommen. Für den einzelnen Alarm kann ein eigener Name vergeben werden.
+| Ausgabe | Unterstützte Ziele bzw. Verhalten |
+| --- | --- |
+| Schaltausgang | `switch`, `light`, `siren` und `input_boolean`; EIN/AUS je Alarmzustand |
+| Kurztext | `text` oder `input_text`; maximal 14 Byte im gewählten Zeichensatz |
+| Langtext | `text` oder `input_text`; die Längengrenze des Ziels gilt zusätzlich |
+| Benachrichtigung | Ausgewählte HA-App- oder Pushover-Empfänger |
+| Pop-up Nachricht Browser | Ausgewählte Browser-Mod-Geräte; bei aktiven Alarmen mit Quittierungsfunktion |
 
-## Hausalarmtaster
+Optional unter **Gruppen & automatische Aufnahme** Ausgabe- oder Benachrichtigungsgruppen bilden. Nachrichten behalten dabei ihre eigenen Empfänger und Texte.
 
-Unter „Hausalarmtaster automatisch aufnehmen“ ein enges Namensmuster wie `event.hausalarm_*` oder eine HA-Label-ID eintragen. Sind beide gesetzt, müssen beide passen. Bei `event`-Entitäten einen vom Gerät angebotenen Ereignistyp verwenden, beispielsweise `single`. Bei einem Zustandsmelder den tatsächlichen Rohzustand, beispielsweise `on`, verwenden. Anschließend Alarmziele wählen und aktivieren.
+### 2. Rauchmelder automatisch aufnehmen
 
-Die automatische Vorlage gilt für die angegebenen Kriterien und einen Auslösewert. Unterschiedliche Tastentypen können weiterhin einzeln konfiguriert werden. Mehrere gleichzeitig verwaltete automatische Tastervorlagen sind in diesem Testrelease noch nicht enthalten. Unverarbeitete MQTT-Payloads oder reine ZHA-Busereignisse werden nicht direkt abonniert; hierfür muss die vorhandene Anbindung eine passende HA-Entität bereitstellen. Ereignisse vor der Aufnahme einer Quelle werden nicht nachträglich als Tastendruck interpretiert.
+Unter **Gruppen & automatische Aufnahme → Rauchmelder automatisch aufnehmen** die gefundenen Melder prüfen, Alarmziele auswählen und die Aufnahme aktivieren.
 
-## Verhalten und Grenzen
+Dabei wird die Regel **„Feueralarm – alle Rauchmelder“** angelegt beziehungsweise aktualisiert. Sie gilt anschließend auch für neu aufgenommene passende Melder.
 
-- Vorfälle werden weiterhin pro Regel gespeichert. Mehrere Melder derselben Gruppenregel ergänzen diesen Vorfall. Unterschiedliche Regeln werden nicht automatisch zu einem einzigen Vorfall verschmolzen.
-- Prioritäten ordnen gemeinsame Texte; die konfigurierten Textvorlagen und Zielgrenzen gelten weiterhin. Zu lange Texte erzeugen einen sichtbaren Fehler, keine stille Abschneidung.
-- Benachrichtigungsgruppen bündeln konfigurierte Benachrichtigungsausgänge mit ihren eigenen Empfängern und Texten. Zwei verschiedene Nachrichtendefinitionen an dasselbe Handy bleiben zwei beabsichtigte Nachrichten.
-- Quittierung bestätigt einen Alarm; Reset prüft aktive bzw. unklare Ursachen. Änderungen der Mitgliedschaft löschen keinen gespeicherten Vorfall.
-- Beim Löschen eines noch gruppierten Eintrags wird auf die bestehende Mitgliedschaft hingewiesen. Eine manuell gelöschte automatische Quelle wird von erneuter Aufnahme ausgeschlossen; bei Bedarf kann sie manuell wieder angelegt werden.
-- Gruppen sind nicht verschachtelt. Unterstützt werden bis zu 1000 Eingänge, 1000 Regeln, 200 Ausgaben und 200 Gruppen; dies sind Validierungsgrenzen, keine gemessene Hardwarekapazität.
-- Normale Zustandsänderungen und neue Geräte werden im Betrieb verarbeitet. Das Speichern von Konfigurationen lädt die Integration neu, ohne vollständigen HA-Neustart.
-- Ein frischer oder leerer `event`-Eingang mit Zustand `unknown` bedeutet noch kein empfangenes Ereignis. `unavailable` ist eine Störung.
-- Der Versandstatus bestätigt den HA-Serviceaufruf, nicht die Anzeige auf einem physischen Endgerät.
-- Noch ausstehend für den endgültigen v1.0-Umfang: mehrere automatische Tastervorlagen, ein zusammenhängender Einrichtungsassistent mit abschließender Gesamtvorschau und detailliertes Änderungsprotokoll für sämtliche manuellen Gruppenänderungen. Vollständig dynamische Bereichs-/Etagenmitgliedschaft ist ebenfalls noch nicht enthalten; Raumgruppen werden manuell verwaltet.
+- Neue automatische Quellen landen in **„Rauchmelder – Standard“**.
+- **„Alle Rauchmelder“** enthält die erkannten Rauchalarmquellen unabhängig von ihrer Raumgruppe.
+- Neue passende Entitäten werden während des Betriebs aufgenommen. Ein vollständiger HA-Neustart ist dafür nicht erforderlich.
+- Bereits aktive neu aufgenommene Rauchmelder werden ausgewertet und können die konfigurierten Alarmziele anfordern.
 
-## Update und Veröffentlichung
+**X-Sense über MQTT:** Der eigentliche Rauchalarm muss als `binary_sensor` mit Geräteklasse `smoke` in HA vorhanden sein. In den Entitätseinstellungen entspricht das **„Anzeigen als: Rauch“**. Eine Entität namens „Battery Status“ mit Geräteklasse Batterie ist kein Rauchalarmeingang – auch wenn das Gerät „Smoke Alarm“ heißt.
 
-Vor dem Test ein vollständiges HA-Backup erstellen, das Konfiguration und `.storage` enthält. Bestehende Integration nicht löschen. Vorhandene Quellen, Regeln und Ausgaben bleiben erhalten; die neuen Gruppen werden ergänzend geführt. Ein Rückweg nach v0.9 erfolgt über das vollständige vorherige Backup, da ältere Versionen neue Gruppenregeln und Protokollereignisse nicht verstehen.
+### 3. Raumgruppen anlegen
 
-GitHub-Paket an der Repository-Wurzel entpacken: Dort liegen `hacs.json`, README und `custom_components/alarm_management/`. Den inneren Integrationsordner nicht direkt an die Repository-Wurzel kopieren. Änderungen auf einem eigenen Entwicklungszweig committen und veröffentlichen. GitHub-Release mit Tag `v1.1.0` erstellen, Ziel ist dieser Zweig. Als regulären Release veröffentlichen, damit HACS diese Version standardmäßig anbietet. Kein bestehendes Tag verschieben.
+Meldergruppen wie **Erdgeschoss** und **Obergeschoss** anlegen und Quellen über **Melder verschieben** zuordnen. Diese manuellen Zuordnungen bleiben erhalten. Neue Geräte landen weiterhin in der Standardgruppe.
 
-In HACS Alarm Management öffnen, Informationen aktualisieren und bei „Erneut herunterladen“ diese Testversion auswählen; gegebenenfalls Beta-Versionen anzeigen. Nach dem Dateiupdate HA neu starten. Danach zeigt die Integration 1.1.0 an.
+Für die allgemeine Feueralarmregel **„Alle Rauchmelder“** verwenden. So bleibt die allgemeine Alarmierung auch nach einem Gruppenwechsel wirksam. Zusätzliche Regeln können gezielt nur eine Raumgruppe auswerten.
 
-## Praktische Abnahme
+### 4. Hausalarmtaster einbinden
 
-1. Tatsächliche X-Sense-Rauchalarm-Entität prüfen: `smoke`; die Batterie-Entität darf nicht aufgenommen werden.
-2. Aufnahme aktivieren, Testmelder kontrolliert auslösen, Quelle und Bereich prüfen sowie Sirene/Display/Handy testen.
-3. Melder nach EG verschieben; allgemeine Feueralarmregel muss weiterhin reagieren.
-4. Weiteren passenden Melder hinzufügen; er muss automatisch in Standard erscheinen und dieselben Alarmziele verwenden.
-5. Zwei Melder und zwei Regeln gleichzeitig testen: Quittierung und Reset eines Zusammenhangs dürfen andere Alarmanforderungen nicht verlieren.
-6. Tasterereignis testen, anschließend Integration und HA neu starten: kein erneuter Alarm durch den alten Ereigniszeitstempel.
-7. Nichterreichbaren Melder und fehlgeschlagene Ausgabe prüfen; beide müssen verständlich sichtbar sein.
+Taster können einzeln als Eingangsquelle oder über **Hausalarmtaster automatisch aufnehmen** eingebunden werden.
 
-Die eigenständige Alarmfunktion der Rauchmelder muss unabhängig von Home Assistant erhalten bleiben. Dieser Testrelease wurde nicht mit deinen physischen Geräten oder einem laufenden HA-Core geprüft.
+Für die automatische Aufnahme ein eindeutiges Namensmuster, beispielsweise `event.hausalarm_*`, oder eine HA-Label-ID festlegen. Sind beide Kriterien gesetzt, müssen beide passen. Anschließend den Auslösewert und die Alarmziele auswählen.
+
+- Bei Zustandsquellen den Rohzustand verwenden, beispielsweise `on`.
+- Bei `event`-Entitäten einen tatsächlich angebotenen Ereignistyp verwenden, beispielsweise `single`. Die Bezeichnung hängt vom Gerät ab.
+- Neue automatische Taster landen in **„Hausalarm – Standard“**. Die automatisch eingerichtete Regel verwendet **„Alle Hausalarmtaster“**.
+- Alte Ereigniszeitstempel werden beim Neustart nicht erneut als Tastendruck ausgelöst.
+
+Pro Einrichtung steht derzeit eine automatische Tastervorlage zur Verfügung. Unterschiedliche Tastentypen können zusätzlich einzeln konfiguriert werden. Reine ZHA-Busereignisse oder unverarbeitete MQTT-Nachrichten benötigen eine passende HA-Entität als Eingang.
+
+### 5. Regeln und Verteilung prüfen
+
+In der **Regelverwaltung** Einzelquellen oder Gruppen auswählen, Bedingungen festlegen und Alarmziele zuordnen. Die Gruppenbedingung und die Regelbedingung werden getrennt ausgewertet.
+
+**Verteilung prüfen** berechnet einen hypothetischen Alarm aller aktivierten Mitglieder der gewählten Gruppe. Die Vorschau zeigt Regeln und Ausgabeanforderungen. Sie versendet keine Nachrichten und bestätigt keine Erreichbarkeit oder Zustellung.
+
+## Nachrichtentexte
+
+Texte können folgende Platzhalter enthalten:
+
+| Platzhalter | Inhalt |
+| --- | --- |
+| `{regel}` | Ausgelöste Regeln |
+| `{quelle}` | Auslösende Melder |
+| `{bereich}` | Zugeordnete Bereiche |
+| `{alarmtyp}` | Alarmtyp, beispielsweise Feuer |
+| `{status}` | Aktiv, quittiert oder Ruhezustand |
+
+Beispiel: **`{alarmtyp}: {quelle} – {bereich}`**
+
+Für Alarm, Quittierung und Ruhe/Reset können unterschiedliche Werte hinterlegt werden. Bei Benachrichtigungen bedeutet ein leerer normaler Zustandstext, dass in diesem Zustand keine Nachricht angefordert wird; Fehlermeldungen bei blockiertem Reset und Browser-Quittierungsrückmeldungen werden gesondert behandelt. Texte sind Platzhaltertexte, keine ausführbaren HA-Templates. Zielgrenzen gelten auch nach dem Einsetzen der Platzhalter.
+
+## Alarm, Quittierung und Reset
+
+- **Alarm:** Ein passender Eingang löst eine Regel aus. Der Vorfall bleibt gespeichert, auch wenn die Ursache anschließend wieder verschwindet.
+- **Quittierung:** Bestätigt die Kenntnisnahme. Sie beseitigt keine weiterhin aktive Ursache. Ausgänge verwenden ihre konfigurierten Quittierungswerte.
+- **Reset:** Setzt zurücksetzbare Vorfälle zurück. Aktive oder für einen vorhandenen Alarm unklare Ursachen können den Reset blockieren; die Integration nennt den Grund.
+
+Mehrere Melder derselben Regel ergänzen deren Vorfall. Unterschiedliche Regeln bleiben getrennte Vorfälle. Ein gemeinsam verwendeter Schaltausgang bleibt EIN, solange mindestens eine zugeordnete Regel EIN anfordert. Regelprioritäten von 0 bis 5 bestimmen die Reihenfolge gemeinsamer Texte; sie unterdrücken keine anderen Alarme.
+
+## Updates und Fehlerbehebung
+
+Vor einem Update ein vollständiges HA-Backup einschließlich Konfiguration und `.storage` erstellen. Das Update über HACS installieren und HA anschließend vollständig neu starten. Die vorhandene Integration weiterverwenden.
+
+**Bei einer unerwartet alten Versionsanzeige:** Die heruntergeladene Version in HACS und den Wert `version` in `/config/custom_components/alarm_management/manifest.json` vergleichen. Nach dem Neustart muss der geladene Stand zur installierten Version passen. Ein alter Geräteeintrag allein bestätigt die geladene Code-Version nicht.
+
+**Bei einem Einrichtungsfehler:** Die genaue Meldung und den zugehörigen Eintrag im HA-Protokoll prüfen. Ab v1.1 nennt die Meldung den betroffenen Teil, etwa Gruppenkonfiguration, Ausgänge oder gespeicherte Alarmvorfälle. Für eine Fehlermeldung auf GitHub HA-Version, Integrationsversion und Schritte zur Reproduktion angeben; persönliche Daten vorher entfernen.
+
+Gespeicherte Alarmdaten nicht von Hand löschen. Ein Rückwechsel auf ältere Versionen kann ein Wiederherstellen des vorherigen vollständigen Backups erfordern, da ältere Versionen neuere Gruppen- und Benachrichtigungsdaten nicht verstehen.
+
+## Entwicklungsstand und Grenzen
+
+Für v1.1.0 wurden **239 automatisierte Offline-Tests** sowie Syntax und Paketstruktur geprüft. Die HA-Anbindung wird dabei mit Testdoubles geprüft. Das ersetzt keine Abnahme im laufenden HA mit den eigenen Meldern, Sirenen, Handys und Tablets. Einzelheiten stehen im [Prüfbericht](VALIDATION.md).
+
+Aktuelle Grenzen:
+
+- Gruppen sind nicht verschachtelt. Raumgruppen werden manuell verwaltet; eine dynamische Zuordnung nach HA-Bereich oder Etage ist noch nicht enthalten.
+- Mehrere automatische Tastervorlagen, ein durchgängiger Einrichtungsassistent und ein vollständiges Protokoll sämtlicher manueller Gruppenänderungen stehen noch aus.
+- Benachrichtigungsgruppen bündeln konfigurierte Nachrichtendefinitionen. Zwei unterschiedliche Definitionen an dasselbe Handy können zwei Nachrichten erzeugen.
+- Der Versandstatus bestätigt die Verarbeitung des HA-Serviceaufrufs; er bestätigt keine Anzeige auf dem Endgerät.
+- Browser-Pop-ups benötigen einen verbundenen Browser. Ein systemweites Tablet-Overlay oder automatisches Aufwecken ist nicht enthalten.
+- Zu lange oder für das Ziel ungeeignete Texte erzeugen einen sichtbaren Ausgabefehler.
+
+**Betriebshinweis:** Aktivierte Ausgänge führen reale Aktionen aus. Die eigenständige Alarmfunktion der Rauchmelder muss unabhängig von Home Assistant erhalten bleiben. Erst die Verteilungsvorschau nutzen und anschließend die tatsächlichen Alarmziele kontrolliert testen.
