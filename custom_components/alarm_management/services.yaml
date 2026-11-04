@@ -13,6 +13,10 @@
   },
   "retry_outputs": {
     "name": "Ausgaben erneut versuchen",
-    "description": "Startet die begrenzten Versuche für aktuell angeforderte oder bereits gesteuerte Ausgänge erneut. Ohne Parameter."
+    "description": "Aktuelle Geräteausgaben erneut versuchen. Für Push/Overlay nur fehlgeschlagene oder unklare Empfänger erneut anfordern; bei unklarem Versand sind doppelte Meldungen möglich."
+  },
+  "acknowledge_popup": {
+    "name": "Angezeigten Browser-Alarm quittieren",
+    "description": "Interne Pop-up-Aktion. output_id und token stammen aus der angezeigten Meldung. Quittiert nur passende aktuelle Alarmvorkommen und meldet das gespeicherte Ergebnis zurück."
   }
 }

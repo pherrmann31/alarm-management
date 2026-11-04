@@ -1,260 +1,171 @@
-# Alarm Management v0.7.0 — übersichtliche Konfiguration
+# Alarm Management
 
-Für Home Assistant OS / Core 2026.10.4. Dieses Update überarbeitet die normale
-HA-Konfiguration und die Darstellung der Entitäten. Echte Geräteausgaben aus v0.6
-bleiben aktiv. Alarm-, Regel-, Speicher- und Ausführungslogik wurden nicht verändert.
+**Alarme sammeln, gemeinsam auswerten und gezielt verteilen – direkt in Home Assistant.**
+
+Alarm Management verbindet Rauchmelder, Hausalarmtaster und weitere Zustandsquellen mit konfigurierbaren Regeln. Diese steuern Sirenen, Statusanzeigen und Benachrichtigungen. Du legst fest, welche Quellen zusammengehören und wer bei einem Alarm informiert wird.
+
+**Dokumentationsstand: v1.2.0 · Home Assistant Core ab 2026.10.4 laut HACS-Konfiguration · Custom Integration in Entwicklung**
+
+[Releases](https://github.com/pherrmann31/alarm-management/releases) · [Fehler melden](https://github.com/pherrmann31/alarm-management/issues) · [Prüfbericht](VALIDATION.md)
+
+## So funktioniert es
+
+**Einzelmelder oder Meldergruppen → Regeln → gespeicherte Alarmvorfälle → Ausgänge und Benachrichtigungen**
+
+Beispiel: Ein Rauchmelder in der Küche löst aus. Die Regel „Feueralarm – alle Rauchmelder“ fordert die Sirene an, schreibt den Alarmtext auf eine Anzeige und benachrichtigt die ausgewählten Handys. Meldet später auch der Flur Rauch, ergänzt dieser Melder den Vorfall derselben Regel.
+
+| Baustein | Aufgabe | Beispiel |
+| --- | --- | --- |
+| Eingangsquelle | Zustand oder Tastenereignis erfassen | Rauchmelder Küche, Hausalarmtaster Flur |
+| Meldergruppe | Mehrere Eingänge gemeinsam auswerten | Rauchmelder Erdgeschoss |
+| Regel | Bedingungen und Alarmziele verbinden | Mindestens ein Rauchmelder löst aus |
+| Ausgabegruppe | Konfigurierte Ausgänge bündeln | Sirene, Warnlicht und Display |
+| Benachrichtigungsgruppe | Konfigurierte Nachrichten bündeln | Handys der Familie und Wandtablets |
+
+## Funktionen
+
+- Einzelne Eingänge sowie Meldergruppen mit „mindestens ein Mitglied“ oder „alle Mitglieder gleichzeitig“.
+- Automatische Aufnahme geeigneter Rauchmelder und Hausalarmtaster nach einmaliger Einrichtung.
+- Standardgruppen für neue Geräte und manuell verwaltete Raumgruppen wie Erdgeschoss oder Obergeschoss.
+- Regeln mit direkten Alarmzielen oder Ausgabe- und Benachrichtigungsgruppen.
+- Gespeicherte Alarmvorfälle mit auslösenden Meldern, Bereichen, Quittierung und Reset.
+- Anzeige gestörter Eingänge sowie Protokolle zu Alarmen, automatischen Aufnahmen und Ausgaben.
+- Vorschau der Verteilung einer Meldergruppe ohne Schaltaktionen oder Nachrichtenversand.
+
+## Voraussetzungen
+
+- Home Assistant mit installierter HACS-Erweiterung für die Installation über HACS.
+- Melder und Taster sind bereits über ihre jeweilige Integration in Home Assistant eingerichtet, beispielsweise MQTT oder Zigbee.
+- Für Handy-Nachrichten: eingerichtete Home-Assistant-Companion-App oder Pushover-Integration.
+- Für Browser-Pop-ups: eingerichtetes Browser Mod und ein verbundenes Dashboard auf dem Zielgerät. Fully Kiosk kann dieses Dashboard anzeigen.
+
+Alarm Management verwendet die in HA vorhandenen Entitäten und Dienste. Die Integration richtet weder die MQTT-Verbindung noch das Zigbee-Netzwerk oder die Herstelleranbindung ein.
 
 ## Installation über HACS
 
-Dieses öffentliche Repository lässt sich als benutzerdefiniertes HACS-Repository
-vom Typ **Integration** hinzufügen: https://github.com/pherrmann31/alarm-management
+1. In HACS das Menü **Benutzerdefinierte Repositories** öffnen.
+2. `https://github.com/pherrmann31/alarm-management` hinzufügen und den Typ **Integration** wählen. Ist das Repository bereits vorhanden, diesen Schritt überspringen.
+3. **Alarm Management** in HACS herunterladen und die gewünschte veröffentlichte Version auswählen.
+4. Home Assistant vollständig neu starten.
+5. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach **Alarm Management** suchen und die Einrichtung abschließen.
 
-Anschließend in HACS **Alarm Management** herunterladen und Home Assistant neu starten.
-Bei der erstmaligen Einrichtung zusätzlich unter Geräte & Dienste die Integration hinzufügen.
-Bei einer bereits vorhandenen manuellen Installation den bestehenden Eintrag behalten.
-Ausführliche Erstveröffentlichung und Übernahme: [GITHUB-ANLEITUNG.md](GITHUB-ANLEITUNG.md).
-Der Code steuert konfigurierte Ausgänge tatsächlich; vor Übernahme Backup erstellen.
+Die Integrationsoptionen erreichst du anschließend über das Zahnrad beim Integrationseintrag.
 
-## Manuelles Update von v0.6.0
+Weitere Hinweise zum Hinzufügen eigener Repositories stehen in der [HACS-Dokumentation](https://www.hacs.xyz/docs/faq/custom_repositories/).
 
-1. HA-Backup erstellen. Testeingänge ausschalten und Testalarme zurücksetzen.
-   Bestehende aktive Anforderungen können nach einem Neustart weiter ausgeführt werden.
-2. `alarm_management-v0.7.0.zip` am PC entpacken. Den enthaltenen Ordner
-   `alarm_management` nach `/config/custom_components/` kopieren und vorhandene Dateien
-   ersetzen/zusammenführen. Ziel: `/config/custom_components/alarm_management/manifest.json`.
-   Es darf kein weiterer Ordner `alarm_management` darunter entstehen.
-3. **Deine vorhandenen PNGs unter `brand/` behalten.** Den Ordner zusammenführen,
-   nicht erst löschen. Das Paket enthält dort nur die Anleitung und überschreibt keine PNGs.
-4. Home Assistant vollständig neu starten, Browser mit Strg+F5 aktualisieren.
-5. Unter Einstellungen → Geräte & Dienste → Alarm Management die Version 0.7.0 prüfen
-   und über das Zahnrad die Konfiguration öffnen. Die vorhandene Integration behalten.
+## Geführter Einrichtungsassistent (ab v1.2)
 
-Eingänge, Regeln, Ausgänge, Zuordnungen, gespeicherte Alarme und Entitäts-IDs bleiben
-erhalten. Store-Schema bleibt 5; es gibt gegenüber v0.6 keine neue Datenmigration.
-V0.6 unterstützt weiterhin Migrationen aus älteren Store-Schemata 1–4. Bei einem
-Update direkt aus v0.5 oder älter deshalb auch den Abschnitt zu echten Ausgaben lesen.
+In der Konfigurationsübersicht **Assistenten & Gruppen → Einrichtungsassistent starten** öffnen. Die Übersicht ist in dieser Reihenfolge angeordnet: Status & Überblick, Assistenten & Gruppen, Eingangsquellen, Ausgänge verwalten, Regelverwaltung und Benachrichtigungen.
 
-## Was jetzt übersichtlicher ist
+Der Assistent führt durch **Eingangsquellen → Ausgänge → Regeln → Benachrichtigungen**. Der erste Eingabedialog jeder neuen Stufe öffnet sich direkt. Nach einem Eintrag kannst du weitere anlegen, weitergehen oder zurückwechseln. Vorhandene Quellen und Ziele stehen in den Auswahlfeldern ebenfalls zur Verfügung.
 
-- Hauptmenü mit aktuellem Alarmzustand, Anzahl der Alarme sowie Eingängen, Regeln und Ausgängen.
-- **Status & Überblick:** Momentaufnahme mit Alarmquellen, ausgelösten Regeln und Fehlerzahlen.
-- Kürzere Dialogtexte, Erläuterungen direkt an den Feldern und beschreibende Menüuntertitel.
-- **Regeln:** oben Name/Aktivierung, darunter **Wenn …** mit Eingängen und UND/ODER
-  sowie **Dann …** mit Alarmtyp und Ausgangszuordnung.
-- **Ausgänge:** oben Name/Ziel/Aktivierung. Werte für **Bei Alarm**, **Nach Quittierung**
-  und **In Ruhe / nach Reset** in eigenen Abschnitten. Quittierung und Ruhe sind anfangs
-  eingeklappt; beim Kurztext ebenso der Zeichensatz. Ein Fehler öffnet den betroffenen Abschnitt.
-- Eingangsübersicht mit Zustand und Bereich; Regelübersicht mit Wenn/Dann und Ausgängen;
-  Ausgangsübersicht mit Typ, Ziel, Regelbindung und Ausführungsstatus.
-- **Weiter** führt aus den Übersichten zurück ins jeweilige Menü, ohne zu speichern
-  oder neu zu laden. Statuswerte sind Momentaufnahmen und werden beim Öffnen ermittelt.
-- Mehrere neue Einträge lassen sich wie bisher nacheinander anlegen und gemeinsam speichern.
+Neue Eingänge und Schaltausgänge sind bei neuen Regeln vorausgewählt und können geändert werden. Nach dem Anlegen von Benachrichtigungen wählst du, welche Regeln sie anfordern sollen; neue Regeln sind dafür vorausgewählt. Eine bewusst leere Auswahl lässt die Benachrichtigungen ohne Zuordnung.
 
-## Darstellung der Entitäten
+Vor dem Abschluss zeigt eine Zusammenfassung die neuen Quellen, Ausgänge und Regelzuordnungen. Bis dahin bleibt alles ein Entwurf. **Speichern & zur Übersicht** übernimmt die Konfiguration, lädt die Integration einmal neu und öffnet die Konfigurationsübersicht mit einer Rückmeldung. Aktive Eingänge können danach unmittelbar reale Alarmziele anfordern. **Entwurf verwerfen** oder Schließen vor dem Speichern übernimmt keine Änderungen.
 
-Die Geräteseite zeigt die zentralen Anzeigen und Bedienknöpfe im Hauptbereich.
-Zähler und Verläufe sind als Diagnose kategorisiert und stehen im HA-Bereich **Diagnose**.
-Das beeinflusst auch automatisch erzeugte Dashboard-Ansichten. Vorhandene manuelle
-Dashboard-Karten und Automationen behalten ihre Entitäts-IDs.
+Wenn sich die Konfiguration währenddessen anderswo ändert, etwa durch automatische Melderaufnahme, wird der Abschluss mit einem Konflikthinweis abgebrochen, damit keine neueren Einstellungen überschrieben werden. Wenn das Neuladen scheitert, bleiben die gespeicherten Einstellungen erhalten; die Übersicht verweist auf das HA-Protokoll.
 
-| Hauptanzeigen | Diagnose |
+Die einzelnen Verwaltungspunkte und die automatische Melderaufnahme bleiben unabhängig vom Assistenten nutzbar.
+
+## Erste Einrichtung
+
+### 1. Alarmziele vorbereiten
+
+Unter **Ausgänge verwalten** die gewünschten Schalt- oder Textausgänge anlegen. Unter **Benachrichtigungen** Handys oder Browser auswählen und Nachrichten konfigurieren.
+
+| Ausgabe | Unterstützte Ziele bzw. Verhalten |
 | --- | --- |
-| Alarmstatus mit Zustandssymbol | Ausgelöste Eingänge |
-| Alarmquellen, Bereiche, Alarmregeln | Erfüllte Regeln |
-| Ausgabestatus und einzelne Ausgangsanzeigen | Alarmverlauf, Ausgabeverlauf |
-| Quittieren, Reset, Ausgaben erneut versuchen | |
+| Schaltausgang | `switch`, `light`, `siren` und `input_boolean`; EIN/AUS je Alarmzustand |
+| Kurztext | `text` oder `input_text`; maximal 14 Byte im gewählten Zeichensatz |
+| Langtext | `text` oder `input_text`; die Längengrenze des Ziels gilt zusätzlich |
+| Benachrichtigung | Ausgewählte HA-App- oder Pushover-Empfänger |
+| Pop-up Nachricht Browser | Ausgewählte Browser-Mod-Geräte; bei aktiven Alarmen mit Quittierungsfunktion |
 
-Einzelne Ausgangsanzeigen heißen standardmäßig `Schalten · Name`, `Kurztext · Name`
-oder `Langtext · Name`. Sirenen, Leuchten und Texttypen erhalten passende Symbole,
-Ausgabefehler ein Warnsymbol. Eigene Namen und Symbole aus der HA-Entitätsverwaltung
-können diese Standardwerte übersteuern. Sie werden absichtlich nicht gelöscht.
-Falls ein alter Name bleibt, in der jeweiligen Entität den eigenen Namenswert leeren,
-um wieder den Standard zu verwenden; die Entitäts-ID dabei beibehalten.
+Optional unter **Assistenten & Gruppen** Ausgabe- oder Benachrichtigungsgruppen bilden. Nachrichten behalten dabei ihre eigenen Empfänger und Texte.
 
-Es handelt sich um native HA-Dialoge und Kategorien. Kein eigener Dashboard- oder
-Frontend-Baustein: Farben, Kartengestaltung, Reihenfolge und der kleine Dienstzeilen-Icon
-werden von Home Assistant festgelegt. Das vorhandene große Integrationslogo bleibt erhalten.
+### 2. Rauchmelder automatisch aufnehmen
 
-## Was gegenüber den bisherigen Plänen umgesetzt ist
+Unter **Assistenten & Gruppen → Rauchmelder automatisch aufnehmen** die gefundenen Melder prüfen, Alarmziele auswählen und die Aufnahme aktivieren.
 
-Eingänge, bearbeitbare UND/ODER-Regeln, gespeicherte Alarme, Quellen/Bereiche, Quittierung,
-Reset, begrenzte Verläufe, frei zugeordnete Schalt-/Textausgänge und echte Ausführung
-stammen aus den bisherigen Versionen. V0.7 ergänzt deren Konfiguration und Anzeige.
-Es kommen keine neuen Alarmbedingungen oder Geräteaktionen hinzu. Erweiterungen wie
-Zeitpläne, Prioritäten und Einzelalarm-Reset bleiben offen; siehe Grenzen am Ende.
+Dabei wird die Regel **„Feueralarm – alle Rauchmelder“** angelegt beziehungsweise aktualisiert. Sie gilt anschließend auch für neu aufgenommene passende Melder.
 
-## Kurzer Oberflächentest nach dem Update
+- Neue automatische Quellen landen in **„Rauchmelder – Standard“**.
+- **„Alle Rauchmelder“** enthält die erkannten Rauchalarmquellen unabhängig von ihrer Raumgruppe.
+- Neue passende Entitäten werden während des Betriebs aufgenommen. Ein vollständiger HA-Neustart ist dafür nicht erforderlich.
+- Bereits aktive neu aufgenommene Rauchmelder werden ausgewertet und können die konfigurierten Alarmziele anfordern.
 
-1. Eingang öffnen: Name, Ziel, Rohwert und Aktivierung müssen stimmen.
-2. Regel öffnen: unter Wenn die bisherigen Eingänge/Verknüpfung, unter Dann Alarmtyp
-   und Ausgänge prüfen. Ohne Änderung schließen.
-3. Ausgang öffnen: alle drei Wertabschnitte aufklappen, beim Kurztext Zeichensatz prüfen.
-4. Mit eigenen Testhelfern einen Eingang auslösen. Alarmstatus, Quelle, Bereich,
-   Regel und tatsächliche Zielzustände prüfen. Danach quittieren und zurücksetzen.
-5. Status-/Listenübersichten öffnen und mit Weiter zurückgehen; dabei dürfen keine
-   Optionen gespeichert werden. Diagnosebereich und Ausgangssymbole prüfen.
+**X-Sense über MQTT:** Der eigentliche Rauchalarm muss als `binary_sensor` mit Geräteklasse `smoke` in HA vorhanden sein. In den Entitätseinstellungen entspricht das **„Anzeigen als: Rauch“**. Eine Entität namens „Battery Status“ mit Geräteklasse Batterie ist kein Rauchalarmeingang – auch wenn das Gerät „Smoke Alarm“ heißt.
 
-172 Offline-Tests und Syntax-/Paketprüfung bestanden. Die konkrete Darstellung im
-laufenden Home Assistant wurde hier nicht visuell getestet. Der separate Prüfbericht
-beschreibt genau die durchgeführten Prüfungen und ihre Grenzen.
+### 3. Raumgruppen anlegen
 
-## Unterstützte echte Ausgaben
+Meldergruppen wie **Erdgeschoss** und **Obergeschoss** anlegen und Quellen über **Melder verschieben** zuordnen. Diese manuellen Zuordnungen bleiben erhalten. Neue Geräte landen weiterhin in der Standardgruppe.
 
-| Ziel | Tatsächliche HA-Aktion |
+Für die allgemeine Feueralarmregel **„Alle Rauchmelder“** verwenden. So bleibt die allgemeine Alarmierung auch nach einem Gruppenwechsel wirksam. Zusätzliche Regeln können gezielt nur eine Raumgruppe auswerten.
+
+### 4. Hausalarmtaster einbinden
+
+Taster können einzeln als Eingangsquelle oder über **Hausalarmtaster automatisch aufnehmen** eingebunden werden.
+
+Für die automatische Aufnahme ein eindeutiges Namensmuster, beispielsweise `event.hausalarm_*`, oder eine HA-Label-ID festlegen. Sind beide Kriterien gesetzt, müssen beide passen. Anschließend den Auslösewert und die Alarmziele auswählen.
+
+- Bei Zustandsquellen den Rohzustand verwenden, beispielsweise `on`.
+- Bei `event`-Entitäten einen tatsächlich angebotenen Ereignistyp verwenden, beispielsweise `single`. Die Bezeichnung hängt vom Gerät ab.
+- Neue automatische Taster landen in **„Hausalarm – Standard“**. Die automatisch eingerichtete Regel verwendet **„Alle Hausalarmtaster“**.
+- Alte Ereigniszeitstempel werden beim Neustart nicht erneut als Tastendruck ausgelöst.
+
+Pro Einrichtung steht derzeit eine automatische Tastervorlage zur Verfügung. Unterschiedliche Tastentypen können zusätzlich einzeln konfiguriert werden. Reine ZHA-Busereignisse oder unverarbeitete MQTT-Nachrichten benötigen eine passende HA-Entität als Eingang.
+
+### 5. Regeln und Verteilung prüfen
+
+In der **Regelverwaltung** Einzelquellen oder Gruppen auswählen, Bedingungen festlegen und Alarmziele zuordnen. Die Gruppenbedingung und die Regelbedingung werden getrennt ausgewertet.
+
+**Verteilung prüfen** berechnet einen hypothetischen Alarm aller aktivierten Mitglieder der gewählten Gruppe. Die Vorschau zeigt Regeln und Ausgabeanforderungen. Sie versendet keine Nachrichten und bestätigt keine Erreichbarkeit oder Zustellung.
+
+## Nachrichtentexte
+
+Texte können folgende Platzhalter enthalten:
+
+| Platzhalter | Inhalt |
 | --- | --- |
-| switch, light, siren, input_boolean | turn_on oder turn_off |
-| text, input_text | set_value mit dem vorbereiteten Text |
-| Textausgang ohne Ziel | Nur eigene Statusentität aktualisieren |
+| `{regel}` | Ausgelöste Regeln |
+| `{quelle}` | Auslösende Melder |
+| `{bereich}` | Zugeordnete Bereiche |
+| `{alarmtyp}` | Alarmtyp, beispielsweise Feuer |
+| `{status}` | Aktiv, quittiert oder Ruhezustand |
 
-Es werden ausschließlich konkrete einzelne Zielentitäten angesprochen, keine Bereiche,
-Gruppen, beliebigen Dienste, Skripte oder toggle-Befehle. Sirenen verwenden die Standardwerte
-ihrer Integration; Ton, Lautstärke und Dauer sind noch nicht konfigurierbar. Ein Gerät, dessen
-Aktion zusätzliche Parameter verlangt, kann deshalb einen sichtbaren Fehler liefern.
+Beispiel: **`{alarmtyp}: {quelle} – {bereich}`**
 
-Eingänge/Regeln/Ausgänge werden wie bisher unter Konfigurieren verwaltet. Pro Ausgang gelten
-Werte für Alarm, Quittierung und Ruhe. Gemeinsame Schaltausgänge bleiben EIN, solange eine
-beteiligte Regel EIN anfordert. Es gibt weiterhin bis zu zehn Eingänge, 30 Regeln und 20 Ausgänge.
-Ein Ausgang pro Ziel verhindert widersprüchliche Definitionen innerhalb dieser Integration.
-Andere Automationen, die dasselbe Gerät steuern, werden dadurch nicht koordiniert:
-vorzugsweise eigene, eindeutig zugeordnete Alarmziele verwenden.
+Für Alarm, Quittierung und Ruhe/Reset können unterschiedliche Werte hinterlegt werden. Bei Benachrichtigungen bedeutet ein leerer normaler Zustandstext, dass in diesem Zustand keine Nachricht angefordert wird; Fehlermeldungen bei blockiertem Reset und Browser-Quittierungsrückmeldungen werden gesondert behandelt. Texte sind Platzhaltertexte, keine ausführbaren HA-Templates. Zielgrenzen gelten auch nach dem Einsetzen der Platzhalter.
 
-## Gesendet und bestätigt unterscheiden
+## Alarm, Quittierung und Reset
 
-Die Ausgangsentität zeigt den Sollwert und in ihren Attributen:
+- **Alarm:** Ein passender Eingang löst eine Regel aus. Der Vorfall bleibt gespeichert, auch wenn die Ursache anschließend wieder verschwindet.
+- **Quittierung:** Bestätigt die Kenntnisnahme. Sie beseitigt keine weiterhin aktive Ursache. Ausgänge verwenden ihre konfigurierten Quittierungswerte.
+- **Reset:** Setzt zurücksetzbare Vorfälle zurück. Aktive oder für einen vorhandenen Alarm unklare Ursachen können den Reset blockieren; die Integration nennt den Grund.
 
-- `delivery_status`: pending, sent, confirmed, failed, mismatch, internal oder idle.
-- `delivery_error`: konkrete Fehlermeldung der Ausführung.
-- `observed_value`: aktuell von HA gelesener Zielzustand.
-- `target_owned`: ob die Integration einen noch zu verwaltenden Befehl für dieses Ziel hat.
+Mehrere Melder derselben Regel ergänzen deren Vorfall. Unterschiedliche Regeln bleiben getrennte Vorfälle. Ein gemeinsam verwendeter Schaltausgang bleibt EIN, solange mindestens eine zugeordnete Regel EIN anfordert. Regelprioritäten von 0 bis 5 bestimmen die Reihenfolge gemeinsamer Texte; sie unterdrücken keine anderen Alarme.
 
-„Gesendet“ bedeutet, dass die HA-Aktion zurückgekehrt ist. Erst wenn die Zielentität den
-angeforderten Wert meldet, wird „Zustand bestätigt“ gesetzt. Diese Bestätigung ist die
-HA-Zustandsmeldung, keine unabhängige elektrische oder physische Prüfung des Aktors.
-Der globale Ausgabestatus zeigt Ausgabefehler, Ausgabe läuft, Rückmeldung offen oder Bereit.
-Alarmstatus und Ausgabestatus sind getrennt: Ein gespeicherter Alarm kann zurückgesetzt sein,
-während ein unerreichbares Gerät seinen Ruhewert noch nicht bestätigt hat.
+## Updates und Fehlerbehebung
 
-Das Ausgabeprotokoll zeigt jetzt tatsächliche Ausführungsversuche und Rückmeldungen,
-bis zu 100 Einträge. Die frühere Planhistorie bleibt separat im Store erhalten. Die Diagnose
-enthält `alarm_session.executions`, `delivery_history`, `output_plan` und `output_history`.
-Vor Weitergabe Namen, Bereiche und Texte prüfen.
+Vor einem Update ein vollständiges HA-Backup einschließlich Konfiguration und `.storage` erstellen. Das Update über HACS installieren und HA anschließend vollständig neu starten. Die vorhandene Integration weiterverwenden.
 
-## Neustart, Quittierung, Reset und Deaktivierung
+**Bei einer unerwartet alten Versionsanzeige:** Die heruntergeladene Version in HACS und den Wert `version` in `/config/custom_components/alarm_management/manifest.json` vergleichen. Nach dem Neustart muss der geladene Stand zur installierten Version passen. Ein alter Geräteeintrag allein bestätigt die geladene Code-Version nicht.
 
-Beim Start werden aktive Alarme erneut mit ihren Zielzuständen abgeglichen. Bereits passende
-Zustände benötigen keinen neuen Geräteaufruf. Ein unbenutztes Ziel ohne Alarm und ohne vorherige
-Steuerung durch die Integration wird im Ruhezustand nicht pauschal überschrieben.
+**Bei einem Einrichtungsfehler:** Die genaue Meldung und den zugehörigen Eintrag im HA-Protokoll prüfen. Ab v1.1 nennt die Meldung den betroffenen Teil, etwa Gruppenkonfiguration, Ausgänge oder gespeicherte Alarmvorfälle. Für eine Fehlermeldung auf GitHub HA-Version, Integrationsversion und Schritte zur Reproduktion angeben; persönliche Daten vorher entfernen.
 
-War ein Ziel schon vor der ersten Alarmanforderung auf dem passenden Wert, sendet die Integration
-keinen redundanten Befehl und beansprucht die fremde Steuerung nicht. Beim späteren Reset wird
-dieses Ziel folglich nicht ausgeschaltet. Das ist keine vollständige Mehrfachsteuerungs-Koordination.
+Gespeicherte Alarmdaten nicht von Hand löschen. Ein Rückwechsel auf ältere Versionen kann ein Wiederherstellen des vorherigen vollständigen Backups erfordern, da ältere Versionen neuere Gruppen- und Benachrichtigungsdaten nicht verstehen.
 
-Ein durch diese Integration wirklich angesprochener Ausgang übernimmt bei Quittierung seinen
-Quittierungswert und bei Reset seinen Ruhewert. Reset ist wie v0.4 gesperrt, solange eine Regel
-erfüllt ist oder eine alarmierte Regel unbestimmbar bleibt. Der Geräteaufruf erfolgt nach dem
-gespeicherten Zustandswechsel; die Rückmeldung im Ausgabeprotokoll prüfen.
+## Entwicklungsstand und Grenzen
 
-Beim Deaktivieren einer Regel entfällt deren Beitrag; andere Regeln können den Ausgang weiter
-anfordern. Beim Deaktivieren eines schon gesteuerten Ausgangs wird dessen Ruhewert angefordert.
-Zielwechsel und Entfernen eines noch gesteuerten Ausgangs werden im Dialog gesperrt, bis sein
-Ruhewert bestätigt ist. Zuerst normalisieren/zurücksetzen oder deaktivieren und die Bestätigung
-abwarten. Ein Ziel ohne Rückmeldung muss gegebenenfalls direkt geprüft und sein Zustand in HA
-wiederhergestellt werden, bevor die Zuordnung geändert werden kann.
+Für v1.2.0 wurden **247 automatisierte Offline-Tests** sowie Syntax und Paketstruktur geprüft. Die HA-Anbindung wird dabei mit Testdoubles geprüft. Das ersetzt keine Abnahme im laufenden HA mit den eigenen Meldern, Sirenen, Handys und Tablets. Einzelheiten stehen im [Prüfbericht](VALIDATION.md).
 
-Entladen, Deaktivieren der gesamten Integration, Entfernen oder HA-Stopp senden keinen
-pauschalen AUS-Befehl. Geräte können dann ihren zuletzt erreichten Zustand behalten. Vor dem
-Entfernen zuerst Alarme normalisieren und zurücksetzen bzw. Ausgänge deaktivieren und die
-Ruhewerte bestätigen lassen. Bereits laufende Aktionen dürfen noch abschließen, neue werden
-beim Entladen nicht mehr begonnen. Wiederholungs-Timer werden entfernt.
+Aktuelle Grenzen:
 
-## Fehler, Zeitgrenzen und Wiederholen
+- Gruppen sind nicht verschachtelt. Raumgruppen werden manuell verwaltet; eine dynamische Zuordnung nach HA-Bereich oder Etage ist noch nicht enthalten.
+- Mehrere automatische Tastervorlagen und ein vollständiges Protokoll sämtlicher manueller Gruppenänderungen stehen noch aus.
+- Benachrichtigungsgruppen bündeln konfigurierte Nachrichtendefinitionen. Zwei unterschiedliche Definitionen an dasselbe Handy können zwei Nachrichten erzeugen.
+- Der Versandstatus bestätigt die Verarbeitung des HA-Serviceaufrufs; er bestätigt keine Anzeige auf dem Endgerät.
+- Browser-Pop-ups benötigen einen verbundenen Browser. Ein systemweites Tablet-Overlay oder automatisches Aufwecken ist nicht enthalten.
+- Zu lange oder für das Ziel ungeeignete Texte erzeugen einen sichtbaren Ausgabefehler.
 
-Die Ausführungsabsicht wird gespeichert, bevor ein externer Befehl gesendet wird. Scheitert
-dieser Schreibvorgang, erfolgt kein neuer Geräteaufruf. Ergebnisse werden ebenfalls gespeichert;
-ein Fehler dabei bleibt als Speicherfehler sichtbar und wird nicht als Erfolg ausgegeben.
-Alarm- und Ausführungsdaten werden beim nächsten Schreibversuch zusammengeführt, damit eine
-verspätete Wiederholung keine neueren Rückmeldungen überschreibt.
-
-Je Ausgang sind höchstens drei Versuche für denselben aktuellen Befehl vorgesehen, mit mindestens
-fünf Sekunden Abstand. Ein HA-Aufruf hat ein Zeitlimit von zehn Sekunden. Höchstens vier
-Geräteaufrufe laufen parallel; pro Ausgang werden sie serialisiert. Vor dem Absenden wird ein
-wartender Befehl nochmals gegen den aktuellen Sollwert geprüft. Ein bereits begonnener Aufruf
-kann beim Reset nicht zurückgeholt werden; anschließend wird der aktuelle Sollwert bearbeitet.
-
-Dienstfehler und bekannte abweichende Zustände führen zu begrenzten Wiederholungen. Wenn HA
-den Aufruf akzeptiert hat, aber das Ziel keine Zustandsrückmeldung liefert, bleibt der Status
-„Gesendet“; es gibt keine endlosen blinden Wiederholungen. Ein Timeout kann bedeuten, dass das
-Gerät den Befehl trotzdem empfangen hat. Absolute EIN/AUS-/Textwerte vermeiden Toggle-Dopplungen,
-sind aber bei Geräten mit eigener Zeitsteuerung nicht frei von Nebeneffekten.
-
-Über die Schaltfläche **Ausgaben erneut versuchen** oder `alarm_management.retry_outputs`
-beginnst du für aktuelle Anforderungen einen neuen begrenzten Versuchslauf. Nicht angeforderte,
-bisher nicht gesteuerte Ruheziele werden dadurch nicht neu überschrieben.
-
-## Texte und der behobene unknown-Fehler
-
-Vorhandene geladene Textziele mit noch unbekanntem Inhalt dürfen beschrieben werden. Fehlende,
-tatsächlich nicht verfügbare oder lediglich wiederhergestellte Platzhalter-Entitäten bleiben
-gesperrt. Der in v0.5.0 beobachtete Fehler durch einen unbekannten Textinhalt ist behoben.
-
-Kurztext bleibt auf 14 Byte in ASCII (DPT 16.000) oder Latin-1 (16.001) begrenzt, einschließlich
-Platzhalterersetzung. Zu lange oder unzulässige Texte werden nicht gesendet und nicht still
-gekürzt. Langtext ist intern bis 4096 Zeichen möglich, ein text/input_text-Ziel erlaubt höchstens
-255 und eventuell weniger. Zielmindest-/Maximallänge wird vor dem Aufruf geprüft; weitere
-geräteseitige Einschränkungen können beim Aufruf einen Fehler liefern.
-
-Platzhalter: {regel}, {quelle}, {bereich}, {alarmtyp}, {status}. Nur einfache Ersetzung, keine
-Python-/Jinja-Auswertung. Bei mehreren Alarmen werden Namen zusammengefasst; ein gemeinsamer
-Kurztext kann dadurch zu lang werden. Eine Textpriorisierung oder wechselnde Displayseiten
-sind noch nicht enthalten. Die eigene Statusentität zeigt bis 255 Zeichen, größere Werte stehen
-größenbegrenzt in Attributen und vollständig im Store/der Diagnose.
-
-## Abnahmetest zuerst mit Helfern
-
-1. Vor dem Update alle Testeingänge ausschalten und zurücksetzen.
-2. Einen unbenutzten input_boolean als Ziel eines Schaltausgangs auswählen, einen input_text
-   als Textziel. Diese Helfer dürfen keine realen Geräteautomationen auslösen.
-3. Alarmregel über einen dritten Testhelfer auslösen. Nun müssen der Zielschalter tatsächlich
-   EIN und der Texthelfer tatsächlich z. B. Einbruch zeigen. Ausgabeprotokoll prüfen.
-4. Quittieren: konfigurierte Quittierungswerte müssen ankommen.
-5. Eingang ausschalten, Reset: Ruhewerte prüfen, Status confirmed und target_owned false.
-6. Eine aktive Anforderung über Neustart prüfen: gewünschter Zustand muss weiter abgeglichen
-   werden, ohne dass bereits passende Ziele unnötig erneut beschrieben werden.
-7. Zwei Regeln demselben Ausgang zuordnen und gemeinsame EIN-Anforderung prüfen.
-8. Einen Ausgang deaktivieren und kontrollieren, dass sein Ruhewert bestätigt wird.
-9. Fehlendes Textziel/zu langen Kurztext prüfen: kein irreführender Erfolgsstatus.
-10. Erst nach erfolgreicher Abnahme Zielentitäten einzeln auf die vorgesehenen Geräte umstellen.
-
-Die Aktionen trigger_test, acknowledge und reset bleiben erhalten. Der unabhängige manuelle
-Testalarm hat keine Regelbindung und löst deshalb keine regelgebundenen Geräteausgaben aus.
-
-## Integrationssymbol
-
-Eigene PNG-Dateien nach `/config/custom_components/alarm_management/brand/` kopieren:
-`icon.png` mit 256 × 256 und `icon@2x.png` mit 512 × 512 Pixeln. Optional dunkle Varianten
-`dark_icon.png` und `dark_icon@2x.png` in denselben Größen. Quadratisch, möglichst transparent,
-ohne unnötigen Rand. Ein eigenes Motiv ist noch nicht im ZIP enthalten. Die Anleitung liegt
-auch im brand-Ordner. Danach HA neu starten und Browser mit Strg+F5 aktualisieren.
-
-## Prüfstand und praktische Grenzen
-
-Siehe `VALIDATION-v0.7.0.md`. Alle Prüfungen hier verwenden eine lokale Python-Umgebung und
-ausdrücklich benannte HA-Testdoubles. Kein echter HA-Core-Start, keine UI-/Dateispeichermigration
-und keine Hardware wurden hier getestet. „Echte Ausführung implementiert“ ist keine Aussage,
-dass dein System damit bereits abgenommen, ausfallsicher oder als Alarmanlage zertifiziert ist.
-
-Es fehlen weiterhin priorisierte Textausgaben, numerische Bedingungen, Zeitpläne, konfigurierbare
-Sirenenparameter, Einzelalarm-Reset, Hardware-Watchdog und unabhängige Aktorbestätigung.
-Bei HA-/Netzwerk-/Datenträgerausfall können Ausgaben verspätet sein, ausbleiben oder im letzten
-Zustand verbleiben. Diese Eigenentwicklung ersetzt keine vorgesehene Brand-/Personenschutzanlage.
-
-Primärquellen:
-
-- [HA-ServiceRegistry.async_call, Core 2026.10.4](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/core.py)
-- [HA TextEntity, Core 2026.10.4](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/components/text/__init__.py)
-- [HA-Formulare und Abschnitte](https://contributors.home-assistant.io/core/integrations/flow-steps/)
-- [HA-Entitätskategorien](https://contributors.home-assistant.io/core/quality-scale/entity-category/)
-- [HA-Integrationsbilder](https://contributors.home-assistant.io/core/integrations/brands/)
-- [Lokale Brand-Dateien, Core 2026.10.4](https://github.com/home-assistant/core/blob/2026.10.4/homeassistant/components/brands/__init__.py)
-
-Entwicklertests im separaten Quellpaket: `python -B -m unittest discover -s tests -v`.
+**Betriebshinweis:** Aktivierte Ausgänge führen reale Aktionen aus. Die eigenständige Alarmfunktion der Rauchmelder muss unabhängig von Home Assistant erhalten bleiben. Erst die Verteilungsvorschau nutzen und anschließend die tatsächlichen Alarmziele kontrolliert testen.

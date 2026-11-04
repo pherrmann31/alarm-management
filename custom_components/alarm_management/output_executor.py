@@ -8,6 +8,7 @@ import re
 from homeassistant.exceptions import HomeAssistantError
 
 from .output_engine import plan_outputs
+from .notification import delivery_id, request
 
 _LOGGER = logging.getLogger(__name__)
 SWITCH_DOMAINS = {"switch", "light", "siren", "input_boolean"}
@@ -39,6 +40,7 @@ class LiveOutputExecutor:
         self._timers = {}
         self._attempts = {}
         self._semaphore = asyncio.Semaphore(4)
+        self._notification_retries = set()
 
     def start(self):
         self.running = True
@@ -52,10 +54,19 @@ class LiveOutputExecutor:
             self._dirty.add(item)
             task = self._tasks.get(item)
             if task is None or task.done():
-                self._tasks[item] = self.hass.async_create_task(self._worker(item))
+                task = self.hass.async_create_task(self._worker(item))
+                self._tasks[item] = task
+                # HA starts tasks eagerly. A worker can finish before assignment
+                # above, so its own finally block cannot reliably remove itself.
+                task.add_done_callback(lambda done, key=item: self._task_done(key, done))
+
+    def _task_done(self, output_id, task):
+        if self._tasks.get(output_id) is task:
+            self._tasks.pop(output_id, None)
 
     def retry(self):
         self._attempts.clear()
+        self._notification_retries.update(output.id for output in self.manager.outputs if output.notification)
         self.schedule()
 
     def stop(self):
@@ -67,7 +78,13 @@ class LiveOutputExecutor:
 
     async def drain(self):
         while self._tasks:
-            await asyncio.gather(*list(self._tasks.values()), return_exceptions=True)
+            # Never busy-loop awaiting already completed eager tasks: in that
+            # case gather may finish synchronously and starve the entire HA loop.
+            for output_id, task in tuple(self._tasks.items()):
+                if task.done():
+                    self._task_done(output_id, task)
+            if self._tasks:
+                await asyncio.gather(*list(self._tasks.values()), return_exceptions=True)
 
     def _retry_later(self, output_id, delay=RETRY_DELAY):
         if not self.running or output_id in self._timers:
@@ -122,6 +139,10 @@ class LiveOutputExecutor:
         return state.state if state and state.state not in ("unknown", "unavailable") else None
 
     async def _execute_latest(self, output_id):
+        output = next((item for item in self.manager.outputs if item.id == output_id), None)
+        if output and output.notification:
+            await self._execute_notifications(output)
+            return
         desired = self._desired(output_id)
         if desired is None:
             output = next((item for item in self.manager.outputs if item.id == output_id), None)
@@ -188,3 +209,63 @@ class LiveOutputExecutor:
             await self.manager.record_delivery(output, plan, target_id, "confirmed" if confirmed else "sent", None, not releasing if confirmed else True)
             if not confirmed and self._observed(entity_id) is not None:
                 self._retry_later(output_id)
+
+    async def _execute_notifications(self, output):
+        plan = self.manager.session.output_plan.get(output.id)
+        if not output.enabled or not plan or plan['status'] != 'planned':
+            return
+        previous = self.manager.session.executions.get(output.id)
+        initial_idle = plan['phase']=='idle' and (not previous or
+                (previous.get('status')=='idle' and previous.get('target_id') in (None,'notification_phase:idle')))
+        if not plan['value'] or initial_idle:
+            await self.manager.record_delivery(output,plan,'notification_phase:'+plan['phase'],'idle',None,False)
+            return
+        retry = output.id in self._notification_retries
+        failures = []
+        for route in output.notification['routes']:
+            if not self.running or not self.manager.running:
+                return
+            current = self.manager.session.output_plan.get(output.id)
+            if current != plan:
+                self.schedule(output.id)
+                return
+            child = replace(output,id=delivery_id(output.id,route),name=output.name+' · '+route)
+            try:
+                fingerprint, domain, service, data, target = request(output,plan,self.manager.session,route)
+            except ValueError as err:
+                failures.append(str(err))
+                continue
+            last = self.manager.session.executions.get(child.id,{})
+            if last.get('target_id') == fingerprint:
+                if last.get('status') == 'sent':
+                    continue
+                if not retry:
+                    failures.append(last.get('error') or 'Vorheriger Versand unklar; bei Bedarf manuell erneut versuchen')
+                    continue
+            async with self._semaphore:
+                current = self.manager.session.output_plan.get(output.id)
+                if not self.running or not self.manager.running or current != plan:
+                    self.schedule(output.id)
+                    return
+                # A durable intent per recipient prevents duplicate delivery after reload.
+                await self.manager.record_delivery(output,plan,None,'pending',None,False)
+                await self.manager.record_delivery(child,plan,fingerprint,'pending',None,False)
+                if not self.running or not self.manager.running or self.manager.session.output_plan.get(output.id) != plan:
+                    self.schedule(output.id)
+                    return
+                try:
+                    if not self.hass.services.has_service(domain,service):
+                        raise HomeAssistantError(f'Aktion {domain}.{service} ist nicht verfügbar')
+                    kwargs = {'blocking':True}
+                    if target:
+                        kwargs['target']=target
+                    async with asyncio.timeout(TIMEOUT):
+                        await self.hass.services.async_call(domain,service,data,**kwargs)
+                except (HomeAssistantError,TimeoutError,ValueError) as err:
+                    error = str(err)[:800] or 'Versandzeit überschritten; Ergebnis unklar'
+                    await self.manager.record_delivery(child,plan,fingerprint,'failed',error,False)
+                    failures.append(route+': '+error)
+                else:
+                    await self.manager.record_delivery(child,plan,fingerprint,'sent',None,False)
+        await self.manager.record_delivery(output,plan,None,'failed' if failures else 'sent', '; '.join(failures)[:1000] or None,False)
+        self._notification_retries.discard(output.id)

@@ -63,8 +63,8 @@ class RuleModelTests(unittest.TestCase):
         rule = model.build_rule(rule_data(self.ids), self.ids)
         with self.assertRaises(ValueError):
             model.serialize_rules([rule, rule], self.sources)
-        rules = [model.build_rule(rule_data(self.ids), self.ids) for _ in range(30)]
-        self.assertEqual(len(model.load_rules({"rule_config": model.serialize_rules(rules, self.sources)}, self.sources)), 30)
+        rules = [model.build_rule(rule_data(self.ids), self.ids) for _ in range(model.MAX_RULES)]
+        self.assertEqual(len(model.load_rules({"rule_config": model.serialize_rules(rules, self.sources)}, self.sources)), model.MAX_RULES)
         with self.assertRaises(ValueError):
             model.serialize_rules(rules + [rule], self.sources)
 
@@ -282,11 +282,11 @@ class RuleFlowTests(unittest.IsolatedAsyncioTestCase):
         flow.hass.entry.options["rule_config"] = {"version": 1, "rules": [model.build_rule(rule_data([sources[0].id]), {source.id for source in sources}).to_dict()]}
         self.assertEqual((await flow.async_step_rule_finish())["reason"], "configuration_changed")
 
-    async def test_no_sources_disables_add_rule(self):
+    async def test_empty_sources_can_prepare_group_rule(self):
         flow, _ = self.flow(source_count=0)
         await flow.async_step_init()
-        self.assertNotIn("rule_add", (await flow.async_step_rules())["menu_options"])
-        self.assertEqual((await flow.async_step_rule_add())["reason"], "no_inputs_for_rules")
+        self.assertIn("rule_add", (await flow.async_step_rules())["menu_options"])
+        self.assertEqual((await flow.async_step_rule_add())["type"], "form")
 
 
 class RuntimeTests(unittest.IsolatedAsyncioTestCase):
