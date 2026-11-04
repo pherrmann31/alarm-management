@@ -10,13 +10,17 @@ from .rule_config import default_rule_id, default_rule_name
 from .rule_engine import SOURCE_FIELDS
 from .output_config import KINDS, PHASES
 from .const import MAX_LONG_TEXT
+from .notification import reset_error_message
 
 EVENT_LABELS = {
+    "discovery_added": "Neue Melder automatisch aufgenommen",
     "source_triggered": "Eingang ausgelöst", "source_cleared": "Eingang wieder normal",
     "trigger_test": "Manueller Testalarm", "acknowledge": "Alarme quittiert",
     "reset": "Alarme zurückgesetzt", "reset_blocked": "Reset blockiert",
     "rule_triggered": "Regel ausgelöst", "rule_cleared": "Regel nicht mehr erfüllt",
     "rule_source_added": "Weitere Quelle zur Regel",
+    "popup_acknowledged": "Quittierung im Browser übernommen",
+    "popup_acknowledge_rejected": "Browser-Quittierung nicht übernommen",
 }
 
 
@@ -151,6 +155,8 @@ def append_event(session, event, now, sources=()):
     if event in ("rule_triggered", "rule_source_added"):
         names = ", ".join(f"{item['rule_name']} ({', '.join(source['name'] for source in item['sources'])})" for item in sources)
     message = EVENT_LABELS[event] + (f": {names}" if names else "")
+    if event=='reset_blocked':
+        message=reset_error_message(sources)
     session.history.append({"time": now, "event": event, "message": message, "sources": sources})
     session.history[:] = session.history[-HISTORY_LIMIT:]
 
@@ -189,7 +195,9 @@ def reconcile(session, snapshot, now):
     return result
 
 
-def apply_action(session, action, snapshot, now):
+def apply_action(session, action, snapshot, now, rule_ids=None):
+    if rule_ids is not None and action!='acknowledge':
+        raise ValueError('Scoped action must be acknowledgement')
     result = reconcile(session, snapshot, now)
     if action == "reset":
         blocked = [item for item in snapshot if item["status"] == "matching" or
@@ -202,15 +210,17 @@ def apply_action(session, action, snapshot, now):
             append_event(result, "reset", now, result.alarms.values())
         result.alarms = {}
     elif action == "acknowledge":
-        changed = [item for item in result.alarms.values() if item["state"] == "active"]
-        if changed or result.manual.state == "active":
+        changed = [item for item in result.alarms.values() if item["state"] == "active" and (rule_ids is None or item['rule_id'] in rule_ids)]
+        if changed or (rule_ids is None and result.manual.state == "active"):
             append_event(result, action, now, changed)
         for record in result.alarms.values():
-            record["state"] = "acknowledged"
+            if rule_ids is None or record['rule_id'] in rule_ids:
+                record["state"] = "acknowledged"
     elif action == "trigger_test":
         append_event(result, action, now)
     # transition validates action names and retains the existing manual test counter.
-    result.manual = transition(result.manual, action, now)
+    if rule_ids is None:
+        result.manual = transition(result.manual, action, now)
     return result, True
 
 

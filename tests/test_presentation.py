@@ -132,4 +132,3 @@ class PresentationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(entity._attr_name,f'Langtext · {output.name}')
         self.assertEqual(entity.icon,'mdi:text-long')
         self.assertEqual(sensors.AlarmStatusSensor(entry).icon,'mdi:shield-check-outline')
-
