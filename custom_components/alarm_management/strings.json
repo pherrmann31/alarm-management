@@ -50,6 +50,9 @@
       },
       "output_log": {
         "name": "Output history"
+      },
+      "input_faults": {
+        "name": "Faulty inputs"
       }
     },
     "button": {
@@ -68,18 +71,21 @@
     "step": {
       "init": {
         "title": "Configure Alarm Management",
-        "description": "**{state}** · {alarms} latched alarms\n\n{inputs} inputs · {rules} rules · {outputs} outputs",
+        "description": "**{state}** · {alarms} latched alarms\n\n{inputs} inputs · {rules} rules · {outputs} outputs · {notifications} notifications",
         "menu_options": {
           "status": "Status & overview",
-          "inputs": "Manage input sources",
-          "rules": "Manage rules",
-          "outputs": "Manage outputs"
+          "inputs": "Input sources",
+          "rules": "Rules",
+          "outputs": "Manage outputs",
+          "notifications": "Notifications",
+          "groups": "Groups & automatic enrollment"
         },
         "menu_option_descriptions": {
           "status": "Review alarms, sources and errors",
           "inputs": "Choose sensors and trigger states",
-          "rules": "Combine inputs and assign outputs",
-          "outputs": "Set up switching, short text and long text"
+          "rules": "Evaluate inputs and assign outputs and notifications",
+          "outputs": "Manage switch, short-text and long-text targets",
+          "notifications": "App, Pushover and browser pop-ups with recipients and messages"
         }
       },
       "add": {
@@ -101,7 +107,7 @@
         "data": {
           "name": "Name",
           "entity_id": "HA entity",
-          "trigger_state": "Trigger state (raw value)",
+          "trigger_state": "Trigger state / button event",
           "enabled": "Input enabled"
         },
         "data_description": {
@@ -134,7 +140,7 @@
         "data": {
           "name": "Name",
           "entity_id": "HA entity",
-          "trigger_state": "Trigger state (raw value)",
+          "trigger_state": "Trigger state / button event",
           "enabled": "Input enabled"
         },
         "data_description": {
@@ -153,7 +159,7 @@
         }
       },
       "inputs": {
-        "title": "Manage input sources",
+        "title": "Input sources",
         "description": "{count} of {limit} inputs. Define which signal triggers each input.",
         "menu_options": {
           "add": "Add input",
@@ -171,7 +177,7 @@
         }
       },
       "rules": {
-        "title": "Manage rules",
+        "title": "Rules",
         "description": "{count} of {limit} rules. Each enabled rule is evaluated independently. Latched alarms remain until reset.",
         "menu_options": {
           "rule_add": "Add rule",
@@ -190,10 +196,11 @@
       },
       "rule_add": {
         "title": "Add rule",
-        "description": "When the input condition matches, the alarm is latched and assigned outputs are requested.",
+        "description": "Set the input condition, then assign outputs and notifications separately.",
         "data": {
           "name": "Rule name",
-          "enabled": "Rule enabled"
+          "enabled": "Rule enabled",
+          "priority": "Priority for shared outputs (5 = first)"
         },
         "data_description": {
           "name": "A short, distinct name for status and history.",
@@ -209,7 +216,7 @@
             },
             "data_description": {
               "input_ids": "Select at least one input.",
-              "mode": "OR: one input is enough. AND: all chosen inputs must match at once. Other rules remain independent."
+              "mode": "At least one: one matching input is enough. All: every selected input must match at once."
             }
           },
           "then": {
@@ -217,21 +224,25 @@
             "description": "Set the alarm type and requested outputs.",
             "data": {
               "alarm_type": "Alarm type",
-              "output_ids": "Assign outputs (optional)"
+              "output_ids": "Assign outputs (optional)",
+              "notification_ids": "Assign notifications (optional)",
+              "group_ids": "Output and notification groups"
             },
             "data_description": {
               "alarm_type": "Used in status and text placeholders.",
-              "output_ids": "Optional. Enabled outputs actually control their assigned targets."
+              "output_ids": "Switch/text outputs. Enabled targets are actually controlled.",
+              "notification_ids": "Selected notifications report alarms and optional acknowledgement/reset. A rejected reset reports its reason to assigned recipients."
             }
           }
         }
       },
       "rule_edit_details": {
         "title": "Edit rule",
-        "description": "When the input condition matches, the alarm is latched and assigned outputs are requested.",
+        "description": "Set the input condition, then assign outputs and notifications separately.",
         "data": {
           "name": "Rule name",
-          "enabled": "Rule enabled"
+          "enabled": "Rule enabled",
+          "priority": "Priority for shared outputs (5 = first)"
         },
         "data_description": {
           "name": "A short, distinct name for status and history.",
@@ -247,7 +258,7 @@
             },
             "data_description": {
               "input_ids": "Select at least one input.",
-              "mode": "OR: one input is enough. AND: all chosen inputs must match at once. Other rules remain independent."
+              "mode": "At least one: one matching input is enough. All: every selected input must match at once."
             }
           },
           "then": {
@@ -255,11 +266,14 @@
             "description": "Set the alarm type and requested outputs.",
             "data": {
               "alarm_type": "Alarm type",
-              "output_ids": "Assign outputs (optional)"
+              "output_ids": "Assign outputs (optional)",
+              "notification_ids": "Assign notifications (optional)",
+              "group_ids": "Output and notification groups"
             },
             "data_description": {
               "alarm_type": "Used in status and text placeholders.",
-              "output_ids": "Optional. Enabled outputs actually control their assigned targets."
+              "output_ids": "Switch/text outputs. Enabled targets are actually controlled.",
+              "notification_ids": "Selected notifications report alarms and optional acknowledgement/reset. A rejected reset reports its reason to assigned recipients."
             }
           }
         }
@@ -297,7 +311,7 @@
       },
       "outputs": {
         "title": "Manage outputs",
-        "description": "{count} of {limit} outputs. Enabled, assigned targets execute real actions.",
+        "description": "{count} switch/text outputs. Shared limit with notifications: {limit} entries. Enabled targets execute real actions.",
         "menu_options": {
           "output_add": "Add output",
           "output_edit": "Edit output",
@@ -315,7 +329,7 @@
       },
       "output_add": {
         "title": "Choose output type and target",
-        "description": "Switch outputs need a switch, light or siren entity. Text targets are optional: without a target only the local status entity updates. The next step prefills the name.",
+        "description": "Choose a switch, short-text or long-text output. Notifications have a separate main menu.",
         "data": {
           "kind": "Output type",
           "entity_id": "Target entity"
@@ -323,7 +337,7 @@
       },
       "output_details": {
         "title": "Configure output",
-        "description": "Set values for each alarm phase. Enabled, assigned targets are actually switched or written.",
+        "description": "Configure switch/text values for alarm, acknowledgement and idle. Enabled targets are actually controlled.",
         "data": {
           "name": "Name",
           "entity_id": "Target entity",
@@ -342,7 +356,7 @@
               "alarm_value": "Value"
             },
             "data_description": {
-              "alarm_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "alarm_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
             }
           },
           "acknowledged": {
@@ -352,7 +366,7 @@
               "acknowledged_value": "Value"
             },
             "data_description": {
-              "acknowledged_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "acknowledged_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
             }
           },
           "idle": {
@@ -362,7 +376,7 @@
               "idle_value": "Value"
             },
             "data_description": {
-              "idle_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "idle_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
             }
           },
           "format": {
@@ -379,7 +393,7 @@
       },
       "output_edit_details": {
         "title": "Edit output",
-        "description": "Set values for each alarm phase. Enabled, assigned targets are actually switched or written.",
+        "description": "Configure switch/text values for alarm, acknowledgement and idle. Enabled targets are actually controlled.",
         "data": {
           "name": "Name",
           "entity_id": "Target entity",
@@ -398,7 +412,7 @@
               "alarm_value": "Value"
             },
             "data_description": {
-              "alarm_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "alarm_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
             }
           },
           "acknowledged": {
@@ -408,7 +422,7 @@
               "acknowledged_value": "Value"
             },
             "data_description": {
-              "acknowledged_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "acknowledged_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
             }
           },
           "idle": {
@@ -418,7 +432,7 @@
               "idle_value": "Value"
             },
             "data_description": {
-              "idle_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; in braces, e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
+              "idle_value": "Text placeholders: regel, quelle, bereich, alarmtyp, status; e.g. {beispiel}. Short text up to 14 bytes, long text up to 4096 characters; target limits also apply."
             }
           },
           "format": {
@@ -467,6 +481,272 @@
       "status": {
         "title": "Status & overview",
         "description": "**Alarm state:** {state}\n\n**Latched alarms:** {alarms}\n\n**Triggered rules:** {rules}\n\n**Alarm sources:** {sources}\n\n**Inputs with unclear state:** {source_errors}\n\n**Outputs with errors:** {output_errors}\n\nSnapshot on opening. Continue returns to configuration without changing settings."
+      },
+      "notification_add": {
+        "title": "Choose notification type",
+        "description": "Choose an HA app/Pushover notification or browser pop-up. Choose devices in the next step.",
+        "data": {
+          "kind": "Notification type"
+        }
+      },
+      "notification_details": {
+        "title": "Configure notification",
+        "description": "Set title, recipients and messages. A rejected reset sends its reason. The browser pop-up acknowledgement button acknowledges only the shown alarms and displays the saved result.",
+        "data": {
+          "name": "Name",
+          "enabled": "Notification enabled"
+        },
+        "data_description": {
+          "name": "Also used for the local output status entity.",
+          "enabled": "Check values and rule assignments before enabling."
+        },
+        "sections": {
+          "alarm": {
+            "name": "When active",
+            "description": "Value when at least one active alarm requests this output.",
+            "data": {
+              "alarm_value": "Message"
+            },
+            "data_description": {
+              "alarm_value": "Up to 1024 characters after substitution. Placeholders: regel, quelle, bereich, alarmtyp, status, e.g. {beispiel}. Empty = no regular phase message. Reset errors and pop-up acknowledgement results are still displayed."
+            }
+          },
+          "acknowledged": {
+            "name": "After acknowledgement",
+            "description": "When the alarm is acknowledged. New entries have a useful default message.",
+            "data": {
+              "acknowledged_value": "Message"
+            },
+            "data_description": {
+              "acknowledged_value": "Up to 1024 characters after substitution. Placeholders: regel, quelle, bereich, alarmtyp, status, e.g. {beispiel}. Empty = no regular phase message. Reset errors and pop-up acknowledgement results are still displayed."
+            }
+          },
+          "idle": {
+            "name": "When idle / after reset",
+            "description": "After a successful reset. A rejected reset reports the specific error instead.",
+            "data": {
+              "idle_value": "Message"
+            },
+            "data_description": {
+              "idle_value": "Up to 1024 characters after substitution. Placeholders: regel, quelle, bereich, alarmtyp, status, e.g. {beispiel}. Empty = no regular phase message. Reset errors and pop-up acknowledgement results are still displayed."
+            }
+          },
+          "delivery": {
+            "name": "Devices & message",
+            "description": "Choose recipients explicitly. For one phone, choose its app entity OR its legacy action. Tablet overlays require Browser Mod connected in the open dashboard.",
+            "data": {
+              "routes": "Devices / recipients",
+              "title": "Title"
+            },
+            "data_description": {
+              "routes": "Multiple selection. No all-browser option. Saved unavailable destinations are labelled.",
+              "title": "Up to 80 characters after placeholder substitution, e.g. {beispiel}."
+            }
+          },
+          "pushover": {
+            "name": "Pushover (optional)",
+            "description": "Use only with a selected Pushover destination.",
+            "data": {
+              "devices": "Pushover device names (optional)",
+              "priority": "Pushover priority"
+            },
+            "data_description": {
+              "devices": "Pushover only: exact device names separated by commas without spaces. Empty = all devices of this Pushover account. HA does not expose these account devices in its device picker.",
+              "priority": "Pushover only. Emergency repeating alerts are not enabled in this version."
+            }
+          }
+        }
+      },
+      "notification_edit": {
+        "title": "Choose notification",
+        "data": {
+          "output_id": "Notification"
+        }
+      },
+      "notification_edit_details": {
+        "title": "Edit notification",
+        "description": "Set title, recipients and messages. A rejected reset sends its reason. The browser pop-up acknowledgement button acknowledges only the shown alarms and displays the saved result.",
+        "data": {
+          "name": "Name",
+          "enabled": "Notification enabled"
+        },
+        "data_description": {
+          "name": "Also used for the local output status entity.",
+          "enabled": "Check values and rule assignments before enabling."
+        },
+        "sections": {
+          "alarm": {
+            "name": "When active",
+            "description": "Value when at least one active alarm requests this output.",
+            "data": {
+              "alarm_value": "Message"
+            },
+            "data_description": {
+              "alarm_value": "Up to 1024 characters after substitution. Placeholders: regel, quelle, bereich, alarmtyp, status, e.g. {beispiel}. Empty = no regular phase message. Reset errors and pop-up acknowledgement results are still displayed."
+            }
+          },
+          "acknowledged": {
+            "name": "After acknowledgement",
+            "description": "When the alarm is acknowledged. New entries have a useful default message.",
+            "data": {
+              "acknowledged_value": "Message"
+            },
+            "data_description": {
+              "acknowledged_value": "Up to 1024 characters after substitution. Placeholders: regel, quelle, bereich, alarmtyp, status, e.g. {beispiel}. Empty = no regular phase message. Reset errors and pop-up acknowledgement results are still displayed."
+            }
+          },
+          "idle": {
+            "name": "When idle / after reset",
+            "description": "After a successful reset. A rejected reset reports the specific error instead.",
+            "data": {
+              "idle_value": "Message"
+            },
+            "data_description": {
+              "idle_value": "Up to 1024 characters after substitution. Placeholders: regel, quelle, bereich, alarmtyp, status, e.g. {beispiel}. Empty = no regular phase message. Reset errors and pop-up acknowledgement results are still displayed."
+            }
+          },
+          "delivery": {
+            "name": "Devices & message",
+            "description": "Choose recipients explicitly. For one phone, choose its app entity OR its legacy action. Tablet overlays require Browser Mod connected in the open dashboard.",
+            "data": {
+              "routes": "Devices / recipients",
+              "title": "Title"
+            },
+            "data_description": {
+              "routes": "Multiple selection. No all-browser option. Saved unavailable destinations are labelled.",
+              "title": "Up to 80 characters after placeholder substitution, e.g. {beispiel}."
+            }
+          },
+          "pushover": {
+            "name": "Pushover (optional)",
+            "description": "Use only with a selected Pushover destination.",
+            "data": {
+              "devices": "Pushover device names (optional)",
+              "priority": "Pushover priority"
+            },
+            "data_description": {
+              "devices": "Pushover only: exact device names separated by commas without spaces. Empty = all devices of this Pushover account. HA does not expose these account devices in its device picker.",
+              "priority": "Pushover only. Emergency repeating alerts are not enabled in this version."
+            }
+          }
+        }
+      },
+      "notification_after_add": {
+        "title": "Another notification or finish?",
+        "description": "“{name}” is staged. {count} notifications. Finish saves additions; then assign to rules.",
+        "menu_options": {
+          "notification_add": "Another notification",
+          "notification_finish": "Finish and save all"
+        }
+      },
+      "notification_remove": {
+        "title": "Choose notification to remove",
+        "data": {
+          "output_id": "Notification"
+        }
+      },
+      "notification_confirm_remove": {
+        "title": "Remove notification",
+        "description": "Remove “{name}”? Devices and original entities remain.\n\nUsed by: {rules}\n\nFirst remove existing rule assignments.",
+        "data": {
+          "confirm": "Confirm removal"
+        }
+      },
+      "notification_overview": {
+        "title": "Your notifications",
+        "description": "{count} outputs:\n\n{outputs}"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "{count} notifications. Shared limit with switch/text outputs: {limit} entries. Configure recipients and messages here, then assign to a rule.",
+        "menu_options": {
+          "notification_add": "Add",
+          "notification_edit": "Edit",
+          "notification_remove": "Remove",
+          "notification_overview": "Show overview",
+          "init": "Back to main menu"
+        },
+        "menu_option_descriptions": {
+          "notification_add": "Create app/Pushover notification or browser pop-up",
+          "notification_edit": "Change recipients, title and messages",
+          "notification_remove": "Review assignments and remove entry",
+          "notification_overview": "Review recipients and assigned rules",
+          "init": "Return to main menu"
+        }
+      },
+      "groups": {
+        "title": "Manage groups",
+        "menu_options": {
+          "group_add": "Add group",
+          "group_edit": "Edit group",
+          "group_move": "Move detector",
+          "group_remove": "Delete group",
+          "discovery": "Automatically enroll smoke detectors",
+          "house_discovery": "Automatically enroll house alarm buttons",
+          "group_test": "Preview routing",
+          "init": "Back"
+        }
+      },
+      "group_add": {
+        "title": "Add group",
+        "data": {
+          "kind": "Group type"
+        }
+      },
+      "group_edit": {
+        "title": "Edit group",
+        "data": {
+          "group_id": "Group"
+        }
+      },
+      "group_details": {
+        "title": "Group settings",
+        "data": {
+          "name": "Name",
+          "members": "Members",
+          "mode": "Evaluation"
+        }
+      },
+      "group_move": {
+        "title": "Move detector",
+        "data": {
+          "source_id": "Detector",
+          "group_id": "Group"
+        },
+        "description": "Moves the detector to the selected group. Automatic all-detector groups retain it."
+      },
+      "group_remove": {
+        "title": "Delete group",
+        "data": {
+          "group_id": "Group"
+        },
+        "description": "Remove group references from rules first. Built-in groups cannot be deleted."
+      },
+      "discovery": {
+        "title": "Automatically enroll smoke detectors",
+        "data": {
+          "auto_smoke": "Automatically enroll new smoke detectors",
+          "targets": "Alarm outputs and notifications"
+        },
+        "description": "Detected smoke alarm entities:\n\n{devices}\n\nEnabling this creates or updates the all-smoke-detectors rule with your selected targets. New detectors enter the default smoke group. Moving a detector does not remove it from the all-smoke group. Battery entities are excluded."
+      },
+      "house_discovery": {
+        "title": "Automatically enroll house alarm buttons",
+        "data": {
+          "auto_house": "Enable automatic enrollment",
+          "house_pattern": "Name or entity ID pattern (e.g. event.house_alarm_*)",
+          "house_label": "HA label ID (optional)",
+          "house_trigger": "Button event type or trigger state",
+          "targets": "Alarm outputs and notifications"
+        },
+        "description": "Provide a specific name pattern or label ID. If both are set, both must match. Example: event.house_alarm_* with event type single. The MQTT/Zigbee integration must expose suitable HA entities; event types depend on the device. Enabling this creates or updates the all-house-alarm-buttons rule with the selected targets."
+      },
+      "group_test": {
+        "title": "Preview routing",
+        "description": "{result}",
+        "data": {
+          "group_id": "Group"
+        }
       }
     },
     "error": {
@@ -495,7 +775,12 @@
       "unsupported_character": "Text contains characters outside the chosen encoding.",
       "invalid_output_assignment": "Select existing outputs without duplicates.",
       "output_in_use": "This output is still assigned to rules. Remove those assignments first.",
-      "output_owned": "This target is still controlled by the integration. Reset the alarm or disable the output and wait for the idle value to be confirmed."
+      "output_owned": "This target is still controlled by the integration. Reset the alarm or disable the output and wait for the idle value to be confirmed.",
+      "invalid_notification": "Check recipient selection, title and Pushover settings. Select at least one matching destination.",
+      "notification_too_long": "Shorten the message to 1024 characters; title up to 80 characters after substitution.",
+      "group_in_use": "This group is in use or is a protected built-in group.",
+      "invalid_house_discovery": "Check the discovery pattern/label, trigger and at least one alarm target.",
+      "choose_discovery_targets": "Select at least one output or notification. Create these first if necessary."
     },
     "abort": {
       "invalid_configuration": "Inputs, rules or outputs are invalid or from a newer version. Nothing was overwritten; check logs and backup.",
@@ -506,8 +791,9 @@
       "no_inputs_for_rules": "First add at least one input under Input sources.",
       "max_rules": "Maximum of 30 rules. Remove a rule first.",
       "no_rules": "No rules yet. Add a rule to begin.",
-      "max_outputs": "Maximum of 20 outputs. Remove one first.",
-      "no_outputs": "No outputs configured yet."
+      "max_outputs": "Shared limit of 20 outputs and notifications reached.",
+      "no_outputs": "No outputs configured yet.",
+      "group_member_in_use": "This item still belongs to a group. Remove its membership first."
     }
   },
   "selector": {
@@ -520,15 +806,17 @@
     },
     "rule_mode": {
       "options": {
-        "any": "OR – at least one input",
-        "all": "AND – all selected inputs"
+        "any": "At least one input matches",
+        "all": "All inputs match at once"
       }
     },
     "output_kind": {
       "options": {
         "switch": "Switch output · ON/OFF",
         "short_text": "Short text · at most 14 bytes",
-        "long_text": "Long text"
+        "long_text": "Long text",
+        "notification": "Notification",
+        "overlay": "Browser pop-up message"
       }
     },
     "output_encoding": {
@@ -541,6 +829,14 @@
       "options": {
         "on": "ON",
         "off": "OFF"
+      }
+    },
+    "notification_priority": {
+      "options": {
+        "-2": "Silent",
+        "-1": "Low",
+        "0": "Normal",
+        "1": "High"
       }
     }
   }

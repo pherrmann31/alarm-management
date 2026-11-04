@@ -21,15 +21,23 @@ def evaluate_rules(rules, snapshot):
         else:
             status = ("not_matching" if "not_matching" in states else
                       "matching" if all(state == "matching" for state in states) else "unknown")
-        contributors = [{key: deepcopy(item.get(key)) for key in SOURCE_FIELDS}
-                        for item in items if item and item["status"] == "matching"]
+        contributors_by_id = {}
+        for item in items:
+            if item and item["status"] == "matching":
+                for member in item.get("contributors", [item]):
+                    contributors_by_id[member["id"]] = {key: deepcopy(member.get(key)) for key in SOURCE_FIELDS}
+        contributors = list(contributors_by_id.values())
+        input_states = dict(zip(rule.input_ids, states, strict=True))
+        for item in items:
+            if item:
+                input_states.update(item.get('member_states', {}))
         areas = list(dict.fromkeys(item["area_name"] or "Ohne Bereich" for item in contributors))
         result.append({
             "id": rule.id, "rule_id": rule.id, "rule_name": rule.name, "name": rule.name,
             "entity_id": contributors[0]["entity_id"] if contributors else f"rule.{rule.id}",
             "alarm_type": rule.alarm_type, "enabled": rule.enabled, "mode": rule.mode,
-            "input_ids": list(rule.input_ids), "sources": contributors,
-            "input_states": dict(zip(rule.input_ids, states, strict=True)),
+            "input_ids": list(input_states), "sources": contributors,
+            "input_states": input_states,
             "area_id": contributors[0]["area_id"] if len(areas) == 1 and contributors else None,
             "area_name": ", ".join(areas) or None, "status": status,
         })

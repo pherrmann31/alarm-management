@@ -50,6 +50,9 @@
       },
       "output_log": {
         "name": "Ausgabeverlauf"
+      },
+      "input_faults": {
+        "name": "Gestörte Eingänge"
       }
     },
     "button": {
@@ -68,18 +71,21 @@
     "step": {
       "init": {
         "title": "Alarm Management konfigurieren",
-        "description": "**{state}** · {alarms} gespeicherte Alarme\n\n{inputs} Eingänge · {rules} Regeln · {outputs} Ausgänge",
+        "description": "**{state}** · {alarms} gespeicherte Alarme\n\n{inputs} Eingänge · {rules} Regeln · {outputs} Ausgänge · {notifications} Benachrichtigungen",
         "menu_options": {
           "status": "Status & Überblick",
-          "inputs": "Eingangsquellen verwalten",
-          "rules": "Regeln verwalten",
-          "outputs": "Ausgänge verwalten"
+          "inputs": "Eingangsquellen",
+          "rules": "Regelverwaltung",
+          "outputs": "Ausgänge verwalten",
+          "notifications": "Benachrichtigungen",
+          "groups": "Gruppen & automatische Aufnahme"
         },
         "menu_option_descriptions": {
           "status": "Alarmzustand, Quellen und Fehler ansehen",
           "inputs": "Sensoren auswählen und Auslösezustände festlegen",
-          "rules": "Eingänge verknüpfen und Ausgänge zuordnen",
-          "outputs": "Schalten, Kurztext und Langtext einrichten"
+          "rules": "Eingänge auswerten, Ausgänge und Benachrichtigungen zuordnen",
+          "outputs": "Schalt-, Kurztext- und Langtextziele verwalten",
+          "notifications": "App, Pushover und Browser-Pop-ups mit eigenen Empfängern und Texten"
         }
       },
       "add": {
@@ -101,7 +107,7 @@
         "data": {
           "name": "Name",
           "entity_id": "HA-Entität",
-          "trigger_state": "Auslösezustand (Rohwert)",
+          "trigger_state": "Auslösezustand / Tastenereignis",
           "enabled": "Eingang aktiviert"
         },
         "data_description": {
@@ -134,7 +140,7 @@
         "data": {
           "name": "Name",
           "entity_id": "HA-Entität",
-          "trigger_state": "Auslösezustand (Rohwert)",
+          "trigger_state": "Auslösezustand / Tastenereignis",
           "enabled": "Eingang aktiviert"
         },
         "data_description": {
@@ -153,7 +159,7 @@
         }
       },
       "inputs": {
-        "title": "Eingangsquellen verwalten",
+        "title": "Eingangsquellen",
         "description": "{count} von {limit} Eingängen. Hier legst du fest, welches Signal einen Eingang auslöst.",
         "menu_options": {
           "add": "Eingang hinzufügen",
@@ -171,7 +177,7 @@
         }
       },
       "rules": {
-        "title": "Regeln verwalten",
+        "title": "Regelverwaltung",
         "description": "{count} von {limit} Regeln. Jede aktivierte Regel wird unabhängig ausgewertet. Gespeicherte Alarme bleiben bis zum Reset bestehen.",
         "menu_options": {
           "rule_add": "Regel hinzufügen",
@@ -190,10 +196,11 @@
       },
       "rule_add": {
         "title": "Regel hinzufügen",
-        "description": "Wenn die Eingangsbedingung erfüllt ist, wird der Alarm gespeichert und zugeordnete Ausgänge werden angefordert.",
+        "description": "Eingangsbedingung festlegen und darunter Ausgänge sowie Benachrichtigungen getrennt zuordnen.",
         "data": {
           "name": "Regelname",
-          "enabled": "Regel aktiviert"
+          "enabled": "Regel aktiviert",
+          "priority": "Priorität für gemeinsame Ausgaben (5 = zuerst)"
         },
         "data_description": {
           "name": "Ein kurzer, eindeutiger Name für Anzeigen und Protokolle.",
@@ -209,7 +216,7 @@
             },
             "data_description": {
               "input_ids": "Mindestens einen Eingang auswählen.",
-              "mode": "ODER: ein Eingang genügt. UND: alle gewählten Eingänge müssen gleichzeitig passen. Andere Regeln gelten unabhängig."
+              "mode": "Mindestens einer: Ein passender Eingang genügt. Alle: Jeder gewählte Eingang muss gleichzeitig passen."
             }
           },
           "then": {
@@ -217,21 +224,25 @@
             "description": "Alarmtyp und gewünschte Ausgänge festlegen.",
             "data": {
               "alarm_type": "Alarmtyp",
-              "output_ids": "Ausgänge zuordnen (optional)"
+              "output_ids": "Ausgänge zuordnen (optional)",
+              "notification_ids": "Benachrichtigungen zuordnen (optional)",
+              "group_ids": "Ausgabe- und Benachrichtigungsgruppen"
             },
             "data_description": {
               "alarm_type": "Wird für Anzeige und Textplatzhalter verwendet.",
-              "output_ids": "Optional. Aktivierte Ausgänge steuern ihre zugeordneten Ziele tatsächlich."
+              "output_ids": "Schalt-/Textausgänge. Aktivierte Ziele werden tatsächlich angesteuert.",
+              "notification_ids": "Gewählte Benachrichtigungen melden den Alarm und optional Quittierung/Reset. Ein abgelehnter Reset meldet den konkreten Grund an die zugeordneten Empfänger."
             }
           }
         }
       },
       "rule_edit_details": {
         "title": "Regel bearbeiten",
-        "description": "Wenn die Eingangsbedingung erfüllt ist, wird der Alarm gespeichert und zugeordnete Ausgänge werden angefordert.",
+        "description": "Eingangsbedingung festlegen und darunter Ausgänge sowie Benachrichtigungen getrennt zuordnen.",
         "data": {
           "name": "Regelname",
-          "enabled": "Regel aktiviert"
+          "enabled": "Regel aktiviert",
+          "priority": "Priorität für gemeinsame Ausgaben (5 = zuerst)"
         },
         "data_description": {
           "name": "Ein kurzer, eindeutiger Name für Anzeigen und Protokolle.",
@@ -247,7 +258,7 @@
             },
             "data_description": {
               "input_ids": "Mindestens einen Eingang auswählen.",
-              "mode": "ODER: ein Eingang genügt. UND: alle gewählten Eingänge müssen gleichzeitig passen. Andere Regeln gelten unabhängig."
+              "mode": "Mindestens einer: Ein passender Eingang genügt. Alle: Jeder gewählte Eingang muss gleichzeitig passen."
             }
           },
           "then": {
@@ -255,11 +266,14 @@
             "description": "Alarmtyp und gewünschte Ausgänge festlegen.",
             "data": {
               "alarm_type": "Alarmtyp",
-              "output_ids": "Ausgänge zuordnen (optional)"
+              "output_ids": "Ausgänge zuordnen (optional)",
+              "notification_ids": "Benachrichtigungen zuordnen (optional)",
+              "group_ids": "Ausgabe- und Benachrichtigungsgruppen"
             },
             "data_description": {
               "alarm_type": "Wird für Anzeige und Textplatzhalter verwendet.",
-              "output_ids": "Optional. Aktivierte Ausgänge steuern ihre zugeordneten Ziele tatsächlich."
+              "output_ids": "Schalt-/Textausgänge. Aktivierte Ziele werden tatsächlich angesteuert.",
+              "notification_ids": "Gewählte Benachrichtigungen melden den Alarm und optional Quittierung/Reset. Ein abgelehnter Reset meldet den konkreten Grund an die zugeordneten Empfänger."
             }
           }
         }
@@ -297,7 +311,7 @@
       },
       "outputs": {
         "title": "Ausgänge verwalten",
-        "description": "{count} von {limit} Ausgängen. Aktivierte, zugeordnete Ziele führen echte Aktionen aus.",
+        "description": "{count} Schalt-/Textausgänge. Gemeinsames Limit mit Benachrichtigungen: {limit} Einträge. Aktivierte Ziele führen echte Aktionen aus.",
         "menu_options": {
           "output_add": "Ausgang hinzufügen",
           "output_edit": "Ausgang bearbeiten",
@@ -315,7 +329,7 @@
       },
       "output_add": {
         "title": "Ausgangstyp und Ziel wählen",
-        "description": "Schaltausgänge benötigen eine Schalter-, Licht- oder Sirenenentität. Bei Texten ist ein Ziel optional: Ohne Ziel wird nur die eigene Statusentität aktualisiert. Der nächste Schritt übernimmt den Namen.",
+        "description": "Schalt-, Kurztext- oder Langtextausgang wählen. Benachrichtigungen findest du im eigenen Hauptmenüpunkt.",
         "data": {
           "kind": "Ausgangstyp",
           "entity_id": "Zielentität"
@@ -323,7 +337,7 @@
       },
       "output_details": {
         "title": "Ausgang einstellen",
-        "description": "Werte je Alarmzustand festlegen. Aktivierte, zugeordnete Ziele werden tatsächlich geschaltet oder beschrieben.",
+        "description": "Schalt-/Textwerte für Alarm, Quittierung und Ruhe einstellen. Aktivierte Ziele werden tatsächlich angesteuert.",
         "data": {
           "name": "Name",
           "entity_id": "Zielentität",
@@ -342,7 +356,7 @@
               "alarm_value": "Wert"
             },
             "data_description": {
-              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
             }
           },
           "acknowledged": {
@@ -352,7 +366,7 @@
               "acknowledged_value": "Wert"
             },
             "data_description": {
-              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
             }
           },
           "idle": {
@@ -362,7 +376,7 @@
               "idle_value": "Wert"
             },
             "data_description": {
-              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
             }
           },
           "format": {
@@ -379,7 +393,7 @@
       },
       "output_edit_details": {
         "title": "Ausgang bearbeiten",
-        "description": "Werte je Alarmzustand festlegen. Aktivierte, zugeordnete Ziele werden tatsächlich geschaltet oder beschrieben.",
+        "description": "Schalt-/Textwerte für Alarm, Quittierung und Ruhe einstellen. Aktivierte Ziele werden tatsächlich angesteuert.",
         "data": {
           "name": "Name",
           "entity_id": "Zielentität",
@@ -398,7 +412,7 @@
               "alarm_value": "Wert"
             },
             "data_description": {
-              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "alarm_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
             }
           },
           "acknowledged": {
@@ -408,7 +422,7 @@
               "acknowledged_value": "Wert"
             },
             "data_description": {
-              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "acknowledged_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
             }
           },
           "idle": {
@@ -418,7 +432,7 @@
               "idle_value": "Wert"
             },
             "data_description": {
-              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; in geschweiften Klammern, z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
+              "idle_value": "Textplatzhalter: regel, quelle, bereich, alarmtyp, status; z. B. {beispiel}. Kurztext höchstens 14 Byte, Langtext höchstens 4096 Zeichen; Zielgrenzen gelten zusätzlich."
             }
           },
           "format": {
@@ -467,6 +481,272 @@
       "status": {
         "title": "Status & Überblick",
         "description": "**Alarmzustand:** {state}\n\n**Gespeicherte Alarme:** {alarms}\n\n**Ausgelöste Regeln:** {rules}\n\n**Alarmquellen:** {sources}\n\n**Eingänge mit unklarem Zustand:** {source_errors}\n\n**Ausgänge mit Fehler:** {output_errors}\n\nMomentaufnahme beim Öffnen. Weiter führt zurück zur Konfiguration und ändert keine Einstellungen."
+      },
+      "notification_add": {
+        "title": "Benachrichtigungstyp wählen",
+        "description": "Benachrichtigung für HA-App/Pushover oder ein Browser-Pop-up wählen. Die Geräteauswahl folgt im nächsten Schritt.",
+        "data": {
+          "kind": "Benachrichtigungstyp"
+        }
+      },
+      "notification_details": {
+        "title": "Benachrichtigung einstellen",
+        "description": "Titel, Empfänger und Texte festlegen. Ein abgelehnter Reset sendet den Grund. Der Quittieren-Knopf im Browser-Pop-up quittiert nur die angezeigten Alarme und zeigt danach die gespeicherte Rückmeldung.",
+        "data": {
+          "name": "Name",
+          "enabled": "Benachrichtigung aktiviert"
+        },
+        "data_description": {
+          "name": "Wird auch als Name der eigenen Ausgangsanzeige verwendet.",
+          "enabled": "Vor dem Aktivieren Werte und Zuordnung in den Regeln prüfen."
+        },
+        "sections": {
+          "alarm": {
+            "name": "Bei Alarm",
+            "description": "Wert bei mindestens einem anfordernden aktiven Alarm.",
+            "data": {
+              "alarm_value": "Nachricht"
+            },
+            "data_description": {
+              "alarm_value": "Bis 1024 Zeichen nach Ersetzung. Platzhalter: regel, quelle, bereich, alarmtyp, status, z. B. {beispiel}. Leer = keine normale Zustandsmeldung. Resetfehler und Rückmeldung nach Pop-up-Quittierung werden trotzdem angezeigt."
+            }
+          },
+          "acknowledged": {
+            "name": "Nach Quittierung",
+            "description": "Bei quittiertem Alarm. Neue Einträge erhalten einen sinnvollen Standardtext.",
+            "data": {
+              "acknowledged_value": "Nachricht"
+            },
+            "data_description": {
+              "acknowledged_value": "Bis 1024 Zeichen nach Ersetzung. Platzhalter: regel, quelle, bereich, alarmtyp, status, z. B. {beispiel}. Leer = keine normale Zustandsmeldung. Resetfehler und Rückmeldung nach Pop-up-Quittierung werden trotzdem angezeigt."
+            }
+          },
+          "idle": {
+            "name": "In Ruhe / nach Reset",
+            "description": "Nach erfolgreichem Reset. Bei abgelehntem Reset wird stattdessen der konkrete Fehler gemeldet.",
+            "data": {
+              "idle_value": "Nachricht"
+            },
+            "data_description": {
+              "idle_value": "Bis 1024 Zeichen nach Ersetzung. Platzhalter: regel, quelle, bereich, alarmtyp, status, z. B. {beispiel}. Leer = keine normale Zustandsmeldung. Resetfehler und Rückmeldung nach Pop-up-Quittierung werden trotzdem angezeigt."
+            }
+          },
+          "delivery": {
+            "name": "Geräte & Nachricht",
+            "description": "Geräte gezielt auswählen. Für ein Handy nur den App-Eintrag ODER seine ältere Aktion auswählen. Für Tablet-Overlays muss Browser Mod im geöffneten Dashboard verbunden sein.",
+            "data": {
+              "routes": "Geräte / Empfänger",
+              "title": "Titel"
+            },
+            "data_description": {
+              "routes": "Mehrfachauswahl. Keine Auswahl „alle Browser“. Bereits gespeicherte, fehlende Geräte werden gekennzeichnet.",
+              "title": "Bis 80 Zeichen nach Platzhalterersetzung, z. B. {beispiel}."
+            }
+          },
+          "pushover": {
+            "name": "Pushover (optional)",
+            "description": "Nur bei ausgewähltem Pushover-Ziel ausfüllen.",
+            "data": {
+              "devices": "Pushover-Gerätenamen (optional)",
+              "priority": "Pushover-Priorität"
+            },
+            "data_description": {
+              "devices": "Nur Pushover: exakte Gerätenamen mit Komma trennen, ohne Leerzeichen. Leer = alle Geräte dieses Pushover-Kontos. HA stellt diese Kontogeräte nicht als Geräteauswahl bereit.",
+              "priority": "Nur Pushover. Keine Notfall-Dauerwiederholung in dieser Version."
+            }
+          }
+        }
+      },
+      "notification_edit": {
+        "title": "Benachrichtigung auswählen",
+        "data": {
+          "output_id": "Benachrichtigung"
+        }
+      },
+      "notification_edit_details": {
+        "title": "Benachrichtigung bearbeiten",
+        "description": "Titel, Empfänger und Texte festlegen. Ein abgelehnter Reset sendet den Grund. Der Quittieren-Knopf im Browser-Pop-up quittiert nur die angezeigten Alarme und zeigt danach die gespeicherte Rückmeldung.",
+        "data": {
+          "name": "Name",
+          "enabled": "Benachrichtigung aktiviert"
+        },
+        "data_description": {
+          "name": "Wird auch als Name der eigenen Ausgangsanzeige verwendet.",
+          "enabled": "Vor dem Aktivieren Werte und Zuordnung in den Regeln prüfen."
+        },
+        "sections": {
+          "alarm": {
+            "name": "Bei Alarm",
+            "description": "Wert bei mindestens einem anfordernden aktiven Alarm.",
+            "data": {
+              "alarm_value": "Nachricht"
+            },
+            "data_description": {
+              "alarm_value": "Bis 1024 Zeichen nach Ersetzung. Platzhalter: regel, quelle, bereich, alarmtyp, status, z. B. {beispiel}. Leer = keine normale Zustandsmeldung. Resetfehler und Rückmeldung nach Pop-up-Quittierung werden trotzdem angezeigt."
+            }
+          },
+          "acknowledged": {
+            "name": "Nach Quittierung",
+            "description": "Bei quittiertem Alarm. Neue Einträge erhalten einen sinnvollen Standardtext.",
+            "data": {
+              "acknowledged_value": "Nachricht"
+            },
+            "data_description": {
+              "acknowledged_value": "Bis 1024 Zeichen nach Ersetzung. Platzhalter: regel, quelle, bereich, alarmtyp, status, z. B. {beispiel}. Leer = keine normale Zustandsmeldung. Resetfehler und Rückmeldung nach Pop-up-Quittierung werden trotzdem angezeigt."
+            }
+          },
+          "idle": {
+            "name": "In Ruhe / nach Reset",
+            "description": "Nach erfolgreichem Reset. Bei abgelehntem Reset wird stattdessen der konkrete Fehler gemeldet.",
+            "data": {
+              "idle_value": "Nachricht"
+            },
+            "data_description": {
+              "idle_value": "Bis 1024 Zeichen nach Ersetzung. Platzhalter: regel, quelle, bereich, alarmtyp, status, z. B. {beispiel}. Leer = keine normale Zustandsmeldung. Resetfehler und Rückmeldung nach Pop-up-Quittierung werden trotzdem angezeigt."
+            }
+          },
+          "delivery": {
+            "name": "Geräte & Nachricht",
+            "description": "Geräte gezielt auswählen. Für ein Handy nur den App-Eintrag ODER seine ältere Aktion auswählen. Für Tablet-Overlays muss Browser Mod im geöffneten Dashboard verbunden sein.",
+            "data": {
+              "routes": "Geräte / Empfänger",
+              "title": "Titel"
+            },
+            "data_description": {
+              "routes": "Mehrfachauswahl. Keine Auswahl „alle Browser“. Bereits gespeicherte, fehlende Geräte werden gekennzeichnet.",
+              "title": "Bis 80 Zeichen nach Platzhalterersetzung, z. B. {beispiel}."
+            }
+          },
+          "pushover": {
+            "name": "Pushover (optional)",
+            "description": "Nur bei ausgewähltem Pushover-Ziel ausfüllen.",
+            "data": {
+              "devices": "Pushover-Gerätenamen (optional)",
+              "priority": "Pushover-Priorität"
+            },
+            "data_description": {
+              "devices": "Nur Pushover: exakte Gerätenamen mit Komma trennen, ohne Leerzeichen. Leer = alle Geräte dieses Pushover-Kontos. HA stellt diese Kontogeräte nicht als Geräteauswahl bereit.",
+              "priority": "Nur Pushover. Keine Notfall-Dauerwiederholung in dieser Version."
+            }
+          }
+        }
+      },
+      "notification_after_add": {
+        "title": "Weitere Benachrichtigung oder fertig?",
+        "description": "„{name}“ ist vorgemerkt. {count} Benachrichtigungen. Fertig speichert alle neuen Einträge; danach den Regeln zuordnen.",
+        "menu_options": {
+          "notification_add": "Weitere Benachrichtigung",
+          "notification_finish": "Fertig und alle speichern"
+        }
+      },
+      "notification_remove": {
+        "title": "Benachrichtigung zum Entfernen wählen",
+        "data": {
+          "output_id": "Benachrichtigung"
+        }
+      },
+      "notification_confirm_remove": {
+        "title": "Benachrichtigung entfernen",
+        "description": "„{name}“ entfernen? Geräte und Originalentitäten bleiben erhalten.\n\nVerwendet in: {rules}\n\nZuerst bestehende Regelzuordnungen entfernen.",
+        "data": {
+          "confirm": "Entfernen bestätigen"
+        }
+      },
+      "notification_overview": {
+        "title": "Deine Benachrichtigungen",
+        "description": "{count} Ausgänge:\n\n{outputs}"
+      },
+      "notifications": {
+        "title": "Benachrichtigungen",
+        "description": "{count} Benachrichtigungen. Gemeinsames Limit mit Schalt-/Textausgängen: {limit} Einträge. Empfänger und Texte hier verwalten, danach einer Regel zuordnen.",
+        "menu_options": {
+          "notification_add": "Hinzufügen",
+          "notification_edit": "Bearbeiten",
+          "notification_remove": "Entfernen",
+          "notification_overview": "Übersicht anzeigen",
+          "init": "Zurück zur Hauptauswahl"
+        },
+        "menu_option_descriptions": {
+          "notification_add": "App-/Pushover-Benachrichtigung oder Browser-Pop-up anlegen",
+          "notification_edit": "Empfänger, Titel und Texte anpassen",
+          "notification_remove": "Zuordnungen prüfen und Eintrag entfernen",
+          "notification_overview": "Empfänger und zugeordnete Regeln ansehen",
+          "init": "Zur Hauptauswahl"
+        }
+      },
+      "groups": {
+        "title": "Gruppen verwalten",
+        "menu_options": {
+          "group_add": "Gruppe anlegen",
+          "group_edit": "Gruppe bearbeiten",
+          "group_move": "Melder verschieben",
+          "group_remove": "Gruppe löschen",
+          "discovery": "Rauchmelder automatisch aufnehmen",
+          "house_discovery": "Hausalarmtaster automatisch aufnehmen",
+          "group_test": "Verteilung prüfen",
+          "init": "Zurück"
+        }
+      },
+      "group_add": {
+        "title": "Gruppe anlegen",
+        "data": {
+          "kind": "Gruppentyp"
+        }
+      },
+      "group_edit": {
+        "title": "Gruppe bearbeiten",
+        "data": {
+          "group_id": "Gruppe"
+        }
+      },
+      "group_details": {
+        "title": "Gruppeneinstellungen",
+        "data": {
+          "name": "Name",
+          "members": "Mitglieder",
+          "mode": "Auswertung"
+        }
+      },
+      "group_move": {
+        "title": "Melder verschieben",
+        "data": {
+          "source_id": "Melder",
+          "group_id": "Gruppe"
+        },
+        "description": "Der Melder wird in die Zielgruppe verschoben. Automatische Gesamtgruppen behalten ihn."
+      },
+      "group_remove": {
+        "title": "Gruppe löschen",
+        "data": {
+          "group_id": "Gruppe"
+        },
+        "description": "Verwendete Gruppen zuerst aus den Regeln entfernen. Standardgruppen bleiben erhalten."
+      },
+      "discovery": {
+        "title": "Rauchmelder automatisch aufnehmen",
+        "data": {
+          "auto_smoke": "Neue Rauchmelder automatisch aufnehmen",
+          "targets": "Ausgänge und Benachrichtigungen bei Alarm"
+        },
+        "description": "Erkannte Rauchalarm-Entitäten:\n\n{devices}\n\nBeim Aktivieren wird die Regel „Feueralarm – alle Rauchmelder“ mit den ausgewählten Zielen angelegt bzw. aktualisiert. Neue Melder landen in „Rauchmelder – Standard“. Verschobene Melder bleiben über „Alle Rauchmelder“ überwacht. Batterie-Entitäten werden ausgeschlossen."
+      },
+      "house_discovery": {
+        "title": "Hausalarmtaster automatisch aufnehmen",
+        "data": {
+          "auto_house": "Automatische Aufnahme aktivieren",
+          "house_pattern": "Namensmuster oder Entitäts-ID (z. B. event.hausalarm_*)",
+          "house_label": "HA-Label-ID (optional)",
+          "house_trigger": "Tastenereignis oder Auslösezustand",
+          "targets": "Ausgänge und Benachrichtigungen bei Alarm"
+        },
+        "description": "Mindestens ein eindeutiges Namensmuster oder eine Label-ID ist erforderlich. Sind beide gesetzt, müssen beide passen. Beispiel: event.hausalarm_* und Ereignistyp single. Die MQTT-/Zigbee-Anbindung muss passende HA-Entitäten bereitstellen. Ereignistypen sind geräteabhängig. Beim Aktivieren wird die Regel „Hausalarm – alle Taster“ mit den ausgewählten Zielen angelegt bzw. aktualisiert."
+      },
+      "group_test": {
+        "title": "Verteilung prüfen",
+        "description": "{result}",
+        "data": {
+          "group_id": "Gruppe"
+        }
       }
     },
     "error": {
@@ -495,7 +775,12 @@
       "unsupported_character": "Text enthält Zeichen außerhalb des gewählten Zeichensatzes.",
       "invalid_output_assignment": "Ausgangsauswahl ungültig. Vorhandene Ausgänge ohne Duplikate wählen.",
       "output_in_use": "Der Ausgang wird noch in Regeln verwendet. Dort die Zuordnung zuerst entfernen.",
-      "output_owned": "Dieses Ziel wird noch von der Integration gesteuert. Zuerst Alarm zurücksetzen oder Ausgang deaktivieren und den bestätigten Ruhewert abwarten."
+      "output_owned": "Dieses Ziel wird noch von der Integration gesteuert. Zuerst Alarm zurücksetzen oder Ausgang deaktivieren und den bestätigten Ruhewert abwarten.",
+      "invalid_notification": "Geräteauswahl, Titel oder Pushover-Einstellungen prüfen. Mindestens ein passendes Ziel auswählen.",
+      "notification_too_long": "Nachricht auf höchstens 1024 Zeichen kürzen; Titel höchstens 80 Zeichen nach Ersetzung.",
+      "group_in_use": "Diese Gruppe wird verwendet oder ist eine geschützte Standardgruppe.",
+      "invalid_house_discovery": "Bitte Erkennungsmuster/Label, Auslösewert und mindestens ein Alarmziel prüfen.",
+      "choose_discovery_targets": "Wähle mindestens einen Ausgang oder eine Benachrichtigung. Lege diese gegebenenfalls zuerst an."
     },
     "abort": {
       "invalid_configuration": "Eingänge, Regeln oder Ausgänge ungültig oder aus neuerer Version. Nichts überschrieben; Protokolle und Backup prüfen.",
@@ -506,8 +791,9 @@
       "no_inputs_for_rules": "Bitte zuerst unter Eingangsquellen mindestens einen Eingang anlegen.",
       "max_rules": "Maximal 30 Regeln. Zuerst eine Regel entfernen.",
       "no_rules": "Noch keine Regeln vorhanden. Über Hinzufügen eine Regel anlegen.",
-      "max_outputs": "Maximal 20 Ausgänge. Zuerst einen Ausgang entfernen.",
-      "no_outputs": "Noch keine Ausgänge vorhanden."
+      "max_outputs": "Gemeinsames Limit von 20 Ausgängen und Benachrichtigungen erreicht.",
+      "no_outputs": "Noch keine Ausgänge vorhanden.",
+      "group_member_in_use": "Der Eintrag wird noch in einer Gruppe verwendet. Entferne zuerst die Gruppenmitgliedschaft."
     }
   },
   "selector": {
@@ -520,15 +806,17 @@
     },
     "rule_mode": {
       "options": {
-        "any": "ODER – mindestens ein Eingang",
-        "all": "UND – alle ausgewählten Eingänge"
+        "any": "Mindestens ein Eingang trifft zu",
+        "all": "Alle Eingänge treffen gleichzeitig zu"
       }
     },
     "output_kind": {
       "options": {
         "switch": "Schaltausgang · EIN/AUS",
         "short_text": "Kurztext · maximal 14 Byte",
-        "long_text": "Langtext"
+        "long_text": "Langtext",
+        "notification": "Benachrichtigung",
+        "overlay": "Pop-up Nachricht Browser"
       }
     },
     "output_encoding": {
@@ -541,6 +829,14 @@
       "options": {
         "on": "EIN",
         "off": "AUS"
+      }
+    },
+    "notification_priority": {
+      "options": {
+        "-2": "Lautlos",
+        "-1": "Niedrig",
+        "0": "Normal",
+        "1": "Hoch"
       }
     }
   }

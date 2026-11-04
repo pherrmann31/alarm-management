@@ -4,6 +4,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import area_registry as ar, device_registry as dr
 from homeassistant.helpers.event import async_track_state_change_event
+from datetime import datetime, timezone
 
 from .input_config import evaluate_source
 
@@ -26,6 +27,8 @@ class InputMonitor:
         self._notify = None
         self.snapshot = []
         self._extra_listeners = []
+        self._event_matches = set()
+        self._started_at = datetime.now(timezone.utc)
 
     @callback
     def start(self, notify) -> None:
@@ -85,6 +88,22 @@ class InputMonitor:
 
     @callback
     def _state_changed(self, event) -> None:
+        new = event.data.get('new_state')
+        old = event.data.get('old_state')
+        if new and new.entity_id.startswith('event.') and (old is None or new.state != old.state):
+            try:
+                occurred = datetime.fromisoformat(new.state)
+                fresh = occurred.tzinfo is not None and occurred >= self._started_at
+            except (ValueError, TypeError):
+                fresh = False
+            if fresh:
+                registry = er.async_get(self.hass)
+                self._event_matches = {source.id for source in self.sources if source.enabled
+                    and resolve_entity_id(source, registry) == new.entity_id
+                    and source.trigger_state == new.attributes.get('event_type')}
+                if self._event_matches:
+                    self.refresh()
+                    self._event_matches.clear()
         self.refresh()
 
     @callback
@@ -98,6 +117,8 @@ class InputMonitor:
             state = self.hass.states.get(entity_id) if source.enabled and entity_id and not own_entity else None
             value = state.state if state else None
             status = "blocked" if own_entity else evaluate_source(source, value)
+            if entity_id and entity_id.startswith('event.') and source.enabled and not own_entity:
+                status = 'matching' if source.id in self._event_matches else 'missing' if state is None else 'unavailable' if value == 'unavailable' else 'not_matching'
             area_id = er.async_get_effective_area_id(self.hass, entry) if entry else None
             area = ar.async_get(self.hass).async_get_area(area_id) if area_id else None
             snapshot.append({

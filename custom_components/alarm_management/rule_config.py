@@ -57,6 +57,8 @@ def build_rule(data, source_ids, *, rule_id=None):
 
 
 def load_rules(options, sources):
+    from .groups import load_groups, rule_sources
+    sources = list({source.id: source for source in rule_sources(sources, load_groups(options))}.values())
     config = options.get(RULE_CONFIG_KEY)
     if (not isinstance(config, dict) or set(config) != {"version", "rules"}
             or type(config["version"]) is not int or config["version"] != RULE_CONFIG_VERSION

@@ -109,8 +109,11 @@ class FakeHass:
     def __init__(self, options=None):
         self.entry = types.SimpleNamespace(entry_id="integration", options=options or {})
         self.registry = FakeRegistry()
+        self.devices = {}
+        self.services = types.SimpleNamespace(async_services=lambda:{'notify':{'mobile_app_phone':{},'pushover':{}}},has_service=lambda *args:True)
         self.values = {"input_boolean.test_alarm": "off"}
         self.states = types.SimpleNamespace(get=lambda item: types.SimpleNamespace(state=self.values[item], attributes={"friendly_name": "Test Alarm"}) if item in self.values else None)
+        self.states.async_all = lambda domain: [types.SimpleNamespace(entity_id=key,attributes={'friendly_name':key}) for key in self.values if key.startswith(domain+'.')]
         self.bus = FakeBus()
         self.trackers = []
 
@@ -153,6 +156,7 @@ def import_adapters():
     areas.async_get = lambda hass: types.SimpleNamespace(async_get_area=lambda area_id: types.SimpleNamespace(name="Flur"))
     areas.EVENT_AREA_REGISTRY_UPDATED = "area_registry_updated"
     modules["homeassistant.helpers.device_registry"].EVENT_DEVICE_REGISTRY_UPDATED = "device_registry_updated"
+    modules["homeassistant.helpers.device_registry"].async_get = lambda hass: types.SimpleNamespace(devices=hass.devices)
     for item in ("EntitySelector", "SelectSelector", "TextSelector"):
         setattr(modules["homeassistant.helpers.selector"], item, FakeSelector)
     modules["homeassistant.helpers.event"].async_track_state_change_event = lambda hass, ids, callback: hass.track(ids, callback)
@@ -184,8 +188,8 @@ class ModelTests(unittest.TestCase):
         self.assertNotEqual(model.build_source(payload()).id, model.build_source(payload()).id)
 
     def test_limit_ten_and_reject_eleventh(self):
-        sources = [model.build_source(payload()) for _ in range(10)]
-        self.assertEqual(len(model.load_sources(options_for(sources))), 10)
+        sources = [model.build_source(payload()) for _ in range(model.MAX_INPUTS)]
+        self.assertEqual(len(model.load_sources(options_for(sources))), model.MAX_INPUTS)
         with self.assertRaises(ValueError):
             options_for(sources + [model.build_source(payload())])
 
@@ -235,7 +239,7 @@ class FlowTests(unittest.IsolatedAsyncioTestCase):
         flow = flows.AlarmManagementConfigFlow.async_get_options_flow(None)
         flow.hass = FakeHass()
         result = await flow.async_step_init()
-        self.assertEqual(result["menu_options"], ["status", "inputs", "rules", "outputs"])
+        self.assertEqual(result["menu_options"], ["status", "inputs", "groups", "rules", "outputs", "notifications"])
         self.assertEqual((await flow.async_step_inputs())["menu_options"], ["add", "overview", "init"])
 
     async def test_existing_setup_still_requires_simulation_confirmation(self):
@@ -294,7 +298,7 @@ class FlowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(model.load_sources(result["data"]), (sources[1],))
 
     async def test_no_add_at_limit_and_server_enforces_limit(self):
-        flow = self.create_flow(options_for([model.build_source(payload()) for _ in range(10)]))
+        flow = self.create_flow(options_for([model.build_source(payload()) for _ in range(model.MAX_INPUTS)]))
         result = await flow.async_step_init()
         self.assertNotIn("add", result["menu_options"])
         self.assertEqual((await flow.async_step_add(payload()))["reason"], "max_inputs")
