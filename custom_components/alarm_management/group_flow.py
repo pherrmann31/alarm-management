@@ -35,7 +35,7 @@ class GroupFlow:
 
     async def async_step_groups(self, user_input=None):
         self._ensure_sources()
-        return self.async_show_menu(step_id='groups', menu_options=['group_add', 'group_edit', 'group_move', 'group_remove', 'group_test', 'discovery', 'house_discovery', 'init'])
+        return self.async_show_menu(step_id='groups', menu_options=['wizard', 'group_add', 'group_edit', 'group_move', 'group_remove', 'group_test', 'discovery', 'house_discovery', 'init'])
 
     def _group_select(self, include_builtin=True):
         return SelectSelector({'options': [{'value': g['id'], 'label': g['name']} for g in self._groups['items']

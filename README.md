@@ -4,7 +4,7 @@
 
 Alarm Management verbindet Rauchmelder, Hausalarmtaster und weitere Zustandsquellen mit konfigurierbaren Regeln. Diese steuern Sirenen, Statusanzeigen und Benachrichtigungen. Du legst fest, welche Quellen zusammengehören und wer bei einem Alarm informiert wird.
 
-**Dokumentationsstand: v1.1.0 · Home Assistant Core ab 2026.10.4 laut HACS-Konfiguration · Custom Integration in Entwicklung**
+**Dokumentationsstand: v1.2.0 · Home Assistant Core ab 2026.10.4 laut HACS-Konfiguration · Custom Integration in Entwicklung**
 
 [Releases](https://github.com/pherrmann31/alarm-management/releases) · [Fehler melden](https://github.com/pherrmann31/alarm-management/issues) · [Prüfbericht](VALIDATION.md)
 
@@ -53,6 +53,20 @@ Die Integrationsoptionen erreichst du anschließend über das Zahnrad beim Integ
 
 Weitere Hinweise zum Hinzufügen eigener Repositories stehen in der [HACS-Dokumentation](https://www.hacs.xyz/docs/faq/custom_repositories/).
 
+## Geführter Einrichtungsassistent (ab v1.2)
+
+In der Konfigurationsübersicht **Assistenten & Gruppen → Einrichtungsassistent starten** öffnen. Die Übersicht ist in dieser Reihenfolge angeordnet: Status & Überblick, Assistenten & Gruppen, Eingangsquellen, Ausgänge verwalten, Regelverwaltung und Benachrichtigungen.
+
+Der Assistent führt durch **Eingangsquellen → Ausgänge → Regeln → Benachrichtigungen**. Der erste Eingabedialog jeder neuen Stufe öffnet sich direkt. Nach einem Eintrag kannst du weitere anlegen, weitergehen oder zurückwechseln. Vorhandene Quellen und Ziele stehen in den Auswahlfeldern ebenfalls zur Verfügung.
+
+Neue Eingänge und Schaltausgänge sind bei neuen Regeln vorausgewählt und können geändert werden. Nach dem Anlegen von Benachrichtigungen wählst du, welche Regeln sie anfordern sollen; neue Regeln sind dafür vorausgewählt. Eine bewusst leere Auswahl lässt die Benachrichtigungen ohne Zuordnung.
+
+Vor dem Abschluss zeigt eine Zusammenfassung die neuen Quellen, Ausgänge und Regelzuordnungen. Bis dahin bleibt alles ein Entwurf. **Speichern & zur Übersicht** übernimmt die Konfiguration, lädt die Integration einmal neu und öffnet die Konfigurationsübersicht mit einer Rückmeldung. Aktive Eingänge können danach unmittelbar reale Alarmziele anfordern. **Entwurf verwerfen** oder Schließen vor dem Speichern übernimmt keine Änderungen.
+
+Wenn sich die Konfiguration währenddessen anderswo ändert, etwa durch automatische Melderaufnahme, wird der Abschluss mit einem Konflikthinweis abgebrochen, damit keine neueren Einstellungen überschrieben werden. Wenn das Neuladen scheitert, bleiben die gespeicherten Einstellungen erhalten; die Übersicht verweist auf das HA-Protokoll.
+
+Die einzelnen Verwaltungspunkte und die automatische Melderaufnahme bleiben unabhängig vom Assistenten nutzbar.
+
 ## Erste Einrichtung
 
 ### 1. Alarmziele vorbereiten
@@ -67,11 +81,11 @@ Unter **Ausgänge verwalten** die gewünschten Schalt- oder Textausgänge anlege
 | Benachrichtigung | Ausgewählte HA-App- oder Pushover-Empfänger |
 | Pop-up Nachricht Browser | Ausgewählte Browser-Mod-Geräte; bei aktiven Alarmen mit Quittierungsfunktion |
 
-Optional unter **Gruppen & automatische Aufnahme** Ausgabe- oder Benachrichtigungsgruppen bilden. Nachrichten behalten dabei ihre eigenen Empfänger und Texte.
+Optional unter **Assistenten & Gruppen** Ausgabe- oder Benachrichtigungsgruppen bilden. Nachrichten behalten dabei ihre eigenen Empfänger und Texte.
 
 ### 2. Rauchmelder automatisch aufnehmen
 
-Unter **Gruppen & automatische Aufnahme → Rauchmelder automatisch aufnehmen** die gefundenen Melder prüfen, Alarmziele auswählen und die Aufnahme aktivieren.
+Unter **Assistenten & Gruppen → Rauchmelder automatisch aufnehmen** die gefundenen Melder prüfen, Alarmziele auswählen und die Aufnahme aktivieren.
 
 Dabei wird die Regel **„Feueralarm – alle Rauchmelder“** angelegt beziehungsweise aktualisiert. Sie gilt anschließend auch für neu aufgenommene passende Melder.
 
@@ -143,12 +157,12 @@ Gespeicherte Alarmdaten nicht von Hand löschen. Ein Rückwechsel auf ältere Ve
 
 ## Entwicklungsstand und Grenzen
 
-Für v1.1.0 wurden **239 automatisierte Offline-Tests** sowie Syntax und Paketstruktur geprüft. Die HA-Anbindung wird dabei mit Testdoubles geprüft. Das ersetzt keine Abnahme im laufenden HA mit den eigenen Meldern, Sirenen, Handys und Tablets. Einzelheiten stehen im [Prüfbericht](VALIDATION.md).
+Für v1.2.0 wurden **247 automatisierte Offline-Tests** sowie Syntax und Paketstruktur geprüft. Die HA-Anbindung wird dabei mit Testdoubles geprüft. Das ersetzt keine Abnahme im laufenden HA mit den eigenen Meldern, Sirenen, Handys und Tablets. Einzelheiten stehen im [Prüfbericht](VALIDATION.md).
 
 Aktuelle Grenzen:
 
 - Gruppen sind nicht verschachtelt. Raumgruppen werden manuell verwaltet; eine dynamische Zuordnung nach HA-Bereich oder Etage ist noch nicht enthalten.
-- Mehrere automatische Tastervorlagen, ein durchgängiger Einrichtungsassistent und ein vollständiges Protokoll sämtlicher manueller Gruppenänderungen stehen noch aus.
+- Mehrere automatische Tastervorlagen und ein vollständiges Protokoll sämtlicher manueller Gruppenänderungen stehen noch aus.
 - Benachrichtigungsgruppen bündeln konfigurierte Nachrichtendefinitionen. Zwei unterschiedliche Definitionen an dasselbe Handy können zwei Nachrichten erzeugen.
 - Der Versandstatus bestätigt die Verarbeitung des HA-Serviceaufrufs; er bestätigt keine Anzeige auf dem Endgerät.
 - Browser-Pop-ups benötigen einen verbundenen Browser. Ein systemweites Tablet-Overlay oder automatisches Aufwecken ist nicht enthalten.

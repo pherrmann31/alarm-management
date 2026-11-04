@@ -15,6 +15,7 @@ from homeassistant.helpers.selector import EntitySelector, SelectSelector, TextS
 from .const import ALARM_TYPES, DOMAIN, INPUT_CONFIG_KEY, MAX_INPUTS, MAX_RULES, RULE_CONFIG_KEY
 from .groups import KEY as GROUP_KEY, load_groups, rule_sources
 from .group_flow import GroupFlow
+from .wizard_flow import WizardFlow
 from .input_config import InputValidationError, build_source, load_sources, serialize_sources
 from .input_monitor import resolve_entity_id
 from .rule_config import build_rule, ensure_rule_options, load_rules, serialize_rules
@@ -53,7 +54,7 @@ class AlarmManagementConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
+class AlarmManagementOptionsFlow(WizardFlow, GroupFlow, OptionsFlowWithReload):
     """One operation per dialog; HA persists options and reloads on changes."""
 
     def __init__(self) -> None:
@@ -71,6 +72,8 @@ class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
         self._pending_output = None
         self._selected_output_id = None
         self._notification_mode = False
+        self._wizard_active = False
+        self._wizard_notice = ""
 
     def _ensure_sources(self) -> None:
         if self._sources is None:
@@ -92,8 +95,8 @@ class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
         except ValueError:
             return self.async_abort(reason="invalid_configuration")
         return self.async_show_menu(
-            step_id="init", menu_options=["status", "inputs", "groups", "rules", "outputs", "notifications"],
-            description_placeholders={"inputs": str(len(self._sources)), "rules": str(len(self._rules)),
+            step_id="init", menu_options=["status", "groups", "inputs", "outputs", "rules", "notifications"],
+            description_placeholders={"notice": self._wizard_notice, "inputs": str(len(self._sources)), "rules": str(len(self._rules)),
                                       "outputs": str(sum(not item.notification for item in self._outputs)),
                                       "notifications":str(sum(bool(item.notification) for item in self._outputs)),
                                       **runtime_summary(getattr(self.config_entry, "runtime_data", None))},
@@ -126,6 +129,12 @@ class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
         )
 
     def _finish(self, sources, rules=None, outputs=None):
+        result = self._configuration_result(sources, rules, outputs)
+        if result['type'] != 'create_entry':
+            return result
+        return self.async_create_entry(title='', data=result['data'])
+
+    def _configuration_result(self, sources, rules=None, outputs=None):
         # Do not overwrite a simultaneous configuration change.
         current = dict(self.config_entry.options)
         if (current.get(GROUP_KEY) != self._original_groups or
@@ -152,7 +161,7 @@ class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
         current[RULE_CONFIG_KEY] = serialize_rules(rules, rule_sources(sources, self._groups))
         bindings = {rule_id: assigned for rule_id, assigned in self._bindings.items() if rule_id in {rule.id for rule in rules}}
         current[OUTPUT_CONFIG_KEY] = serialize_output_config(self._outputs if outputs is None else outputs, bindings, rules)
-        return self.async_create_entry(title="", data=current)
+        return {"type": "create_entry", "title": "", "data": current}
 
     def _source_choices(self):
         labels = selection_labels(self._sources)
@@ -248,6 +257,8 @@ class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
         return await self._input_form("add_details", user_input)
 
     async def async_step_after_add(self, user_input=None):
+        if self._wizard_active:
+            return self._wizard_menu()
         choices = ["add", "finish"] if len(self._sources) < MAX_INPUTS else ["finish"]
         return self.async_show_menu(
             step_id="after_add", menu_options=choices,
@@ -382,6 +393,9 @@ class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
         values['group_ids']=self._groups['assignments'].get(rule.id,[]) if rule else []
         values['output_ids']=[item.id for item in self._outputs if not item.notification and item.id in assigned_ids]
         values['notification_ids']=[item.id for item in self._outputs if item.notification and item.id in assigned_ids]
+        if self._wizard_active and rule is None:
+            values['input_ids']=[s.id for s in self._sources if s.id not in self._wizard_original_ids['inputs']]
+            values['output_ids']=[o.id for o in self._outputs if not o.notification and o.id not in self._wizard_original_ids['outputs']]
         errors = {}
         if user_input is not None:
             try:
@@ -430,6 +444,8 @@ class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
         return await self._rule_form("rule_add", user_input)
 
     async def async_step_rule_after_add(self, user_input=None):
+        if self._wizard_active:
+            return self._wizard_menu()
         choices = ["rule_add", "rule_finish"] if len(self._rules) < MAX_RULES else ["rule_finish"]
         return self.async_show_menu(step_id="rule_after_add", menu_options=choices,
                                     description_placeholders={"name": self._last_added, "count": str(len(self._rules))})
@@ -696,6 +712,8 @@ class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
         return await self._output_form(self._output_step('details'), user_input)
 
     async def async_step_output_after_add(self, user_input=None):
+        if self._wizard_active:
+            return self._wizard_menu()
         return self.async_show_menu(step_id=self._output_step('after_add'),
                                     menu_options=[self._output_step('add'), self._output_step('finish')] if len(self._outputs) < MAX_OUTPUTS else [self._output_step('finish')],
                                     description_placeholders={"name": self._last_added, "count": str(len(self._visible_outputs()))})

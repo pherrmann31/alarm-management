@@ -1,9 +1,7 @@
-# Prüfbericht Alarm Management v1.1.0
+# Prüfbericht v1.2.0
 
-04.11.2026. 239 Offline-Tests bestanden. Python-Syntax, JSON-Dateien, Übersetzungsschlüssel/-Platzhalter und Flow-Verweise geprüft. ZIP-Struktur und Dateiinhalt geprüft; SHA256 liegt bei.
+04.11.2026. 247 automatisierte Offline-Tests bestanden. Python-Syntax, JSON, Versionskonsistenz, Übersetzungsschlüssel und Platzhalter, Flow-Ziele und ZIP-Inhalt geprüft.
 
-Fünf neue Upgrade-Regressionen: v0.9-Optionen mit Benachrichtigungen unverändert übernehmen; aktive gespeicherte Alarme erhalten; fehlende Felder älterer Gruppenentwürfe ergänzen; beschädigte Werte ohne stille Löschung mit benannter Fehlerstufe ablehnen; ungültige Gruppenreferenzen benennen. Die bestehenden 234 Tests bleiben enthalten (u.a. gleichzeitige Ausgaben, Ereignisse, Gruppen, automatische Aufnahme und Eager-Task-Unload).
+Neue Regressionen: vollständiger Assistent mit Eingängen, Ausgängen, vorausgewählten Regelbedingungen und späteren Nachrichten; genau ein Speichern und Neuladen; Rückkehr zur Übersicht; Entwurf verwerfen ohne Schreiben; Konfliktschutz bei zwischenzeitlichen Änderungen; Bestätigung vor Übernahme; Zurücknavigation ohne Verlust; gespeicherte Konfiguration bei Reload-Fehler erhalten; bewusst leere Nachrichten-Zuordnung beim Zurückwechseln erhalten; vorhandene Definitionen beim Abbrechen erhalten.
 
-Getestet mit expliziten HA-Testdoubles, nicht an einem laufenden Home Assistant. Keine Prüfung physischer Melder, Sirenen, MQTT-Broker, Push-Zustellung oder Browser-Pop-ups. Kein hassfest-Lauf. Die konkrete Ursache auf dem Benutzer-HA ist ohne dessen Protokoll nicht abschließend bestätigt; im Screenshot wird alter Code 0.7.0 gemeldet.
-
-Diese Version ist eine Fehlerbehebungs-/Testausgabe mit Versionsnummer 1.1.0. Der noch offene Komfortumfang der v1-Entwicklung ist in README dokumentiert.
+Die 239 bisherigen Tests bleiben enthalten. Tests verwenden explizite HA-Doubles. Kein Test im laufenden HA, kein Browser-Renderingtest, kein hassfest-Lauf und kein Versand an reale Geräte. Vor Live-Abnahme vollständiges Backup erstellen.

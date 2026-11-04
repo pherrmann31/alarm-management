@@ -71,21 +71,22 @@
     "step": {
       "init": {
         "title": "Configure Alarm Management",
-        "description": "**{state}** · {alarms} latched alarms\n\n{inputs} inputs · {rules} rules · {outputs} outputs · {notifications} notifications",
+        "description": "{notice}\n\n**{state}** · {alarms} latched alarms\n\n{inputs} inputs · {rules} rules · {outputs} outputs · {notifications} notifications",
         "menu_options": {
           "status": "Status & overview",
           "inputs": "Input sources",
           "rules": "Rules",
           "outputs": "Manage outputs",
           "notifications": "Notifications",
-          "groups": "Groups & automatic enrollment"
+          "groups": "Assistants & groups"
         },
         "menu_option_descriptions": {
           "status": "Review alarms, sources and errors",
           "inputs": "Choose sensors and trigger states",
           "rules": "Evaluate inputs and assign outputs and notifications",
           "outputs": "Manage switch, short-text and long-text targets",
-          "notifications": "App, Pushover and browser pop-ups with recipients and messages"
+          "notifications": "App, Pushover and browser pop-ups with recipients and messages",
+          "groups": "Set up an alarm route, groups and automatic enrollment"
         }
       },
       "add": {
@@ -675,7 +676,7 @@
         }
       },
       "groups": {
-        "title": "Manage groups",
+        "title": "Assistants & groups",
         "menu_options": {
           "group_add": "Add group",
           "group_edit": "Edit group",
@@ -684,7 +685,11 @@
           "discovery": "Automatically enroll smoke detectors",
           "house_discovery": "Automatically enroll house alarm buttons",
           "group_test": "Preview routing",
-          "init": "Back"
+          "init": "Back",
+          "wizard": "Start setup assistant"
+        },
+        "menu_option_descriptions": {
+          "wizard": "Inputs → outputs → rules → notifications"
         }
       },
       "group_add": {
@@ -746,6 +751,61 @@
         "description": "{result}",
         "data": {
           "group_id": "Group"
+        }
+      },
+      "wizard_inputs": {
+        "title": "Step 1 of 4 · Input sources",
+        "description": "Draft: {inputs} inputs · {outputs} outputs · {rules} rules · {notifications} notifications.\n\nAdd more entries or continue. Existing entries can be selected in later steps. Changes are saved only at the end.",
+        "menu_options": {
+          "add": "Add another entry",
+          "wizard_next": "Next",
+          "wizard_previous": "Back",
+          "wizard_cancel": "Discard draft"
+        }
+      },
+      "wizard_outputs": {
+        "title": "Step 2 of 4 · Outputs",
+        "description": "Draft: {inputs} inputs · {outputs} outputs · {rules} rules · {notifications} notifications.\n\nAdd more entries or continue. Existing entries can be selected in later steps. Changes are saved only at the end.",
+        "menu_options": {
+          "output_add": "Add another entry",
+          "wizard_next": "Next",
+          "wizard_previous": "Back",
+          "wizard_cancel": "Discard draft"
+        }
+      },
+      "wizard_rules": {
+        "title": "Step 3 of 4 · Rules",
+        "description": "Draft: {inputs} inputs · {outputs} outputs · {rules} rules · {notifications} notifications.\n\nAdd more entries or continue. Existing entries can be selected in later steps. Changes are saved only at the end.",
+        "menu_options": {
+          "rule_add": "Add another entry",
+          "wizard_next": "Next",
+          "wizard_previous": "Back",
+          "wizard_cancel": "Discard draft"
+        }
+      },
+      "wizard_notifications": {
+        "title": "Step 4 of 4 · Notifications",
+        "description": "Draft: {inputs} inputs · {outputs} outputs · {rules} rules · {notifications} notifications.\n\nAdd more entries or continue. Existing entries can be selected in later steps. Changes are saved only at the end.",
+        "menu_options": {
+          "notification_add": "Add another entry",
+          "wizard_next": "Next",
+          "wizard_previous": "Back",
+          "wizard_cancel": "Discard draft"
+        }
+      },
+      "wizard_routes": {
+        "title": "Assign notifications",
+        "description": "New notifications: {notifications}\n\nWhich rules should request these notifications? New rules are preselected. With no selection these notifications remain unassigned.",
+        "data": {
+          "rule_ids": "Select rules"
+        }
+      },
+      "wizard_review": {
+        "title": "Review & finish setup",
+        "description": "**New input sources:** {inputs}\n\n**New outputs and notifications:** {outputs}\n\n**New or assigned rules:**\n\n{routing}\n\nSaving reloads the integration. Active inputs can immediately request real outputs and notifications. You then return to the configuration overview.",
+        "data": {
+          "action": "Action",
+          "confirm": "I checked the setup and real alarm targets – apply now"
         }
       }
     },

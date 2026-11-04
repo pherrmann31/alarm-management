@@ -71,21 +71,22 @@
     "step": {
       "init": {
         "title": "Alarm Management konfigurieren",
-        "description": "**{state}** · {alarms} gespeicherte Alarme\n\n{inputs} Eingänge · {rules} Regeln · {outputs} Ausgänge · {notifications} Benachrichtigungen",
+        "description": "{notice}\n\n**{state}** · {alarms} gespeicherte Alarme\n\n{inputs} Eingänge · {rules} Regeln · {outputs} Ausgänge · {notifications} Benachrichtigungen",
         "menu_options": {
           "status": "Status & Überblick",
           "inputs": "Eingangsquellen",
           "rules": "Regelverwaltung",
           "outputs": "Ausgänge verwalten",
           "notifications": "Benachrichtigungen",
-          "groups": "Gruppen & automatische Aufnahme"
+          "groups": "Assistenten & Gruppen"
         },
         "menu_option_descriptions": {
           "status": "Alarmzustand, Quellen und Fehler ansehen",
           "inputs": "Sensoren auswählen und Auslösezustände festlegen",
           "rules": "Eingänge auswerten, Ausgänge und Benachrichtigungen zuordnen",
           "outputs": "Schalt-, Kurztext- und Langtextziele verwalten",
-          "notifications": "App, Pushover und Browser-Pop-ups mit eigenen Empfängern und Texten"
+          "notifications": "App, Pushover und Browser-Pop-ups mit eigenen Empfängern und Texten",
+          "groups": "Alarmweg geführt einrichten, Gruppen und automatische Aufnahme verwalten"
         }
       },
       "add": {
@@ -675,7 +676,7 @@
         }
       },
       "groups": {
-        "title": "Gruppen verwalten",
+        "title": "Assistenten & Gruppen",
         "menu_options": {
           "group_add": "Gruppe anlegen",
           "group_edit": "Gruppe bearbeiten",
@@ -684,7 +685,11 @@
           "discovery": "Rauchmelder automatisch aufnehmen",
           "house_discovery": "Hausalarmtaster automatisch aufnehmen",
           "group_test": "Verteilung prüfen",
-          "init": "Zurück"
+          "init": "Zurück",
+          "wizard": "Einrichtungsassistent starten"
+        },
+        "menu_option_descriptions": {
+          "wizard": "Eingänge → Ausgänge → Regeln → Benachrichtigungen"
         }
       },
       "group_add": {
@@ -746,6 +751,61 @@
         "description": "{result}",
         "data": {
           "group_id": "Gruppe"
+        }
+      },
+      "wizard_inputs": {
+        "title": "Schritt 1 von 4 · Eingangsquellen",
+        "description": "Entwurf: {inputs} Eingänge · {outputs} Ausgänge · {rules} Regeln · {notifications} Benachrichtigungen.\n\nWeitere Einträge hinzufügen oder mit Weiter fortfahren. Vorhandene Einträge können in den nächsten Schritten ausgewählt werden. Gespeichert wird erst beim Abschluss.",
+        "menu_options": {
+          "add": "Weiteren Eintrag anlegen",
+          "wizard_next": "Weiter",
+          "wizard_previous": "Zurück",
+          "wizard_cancel": "Entwurf verwerfen"
+        }
+      },
+      "wizard_outputs": {
+        "title": "Schritt 2 von 4 · Ausgänge",
+        "description": "Entwurf: {inputs} Eingänge · {outputs} Ausgänge · {rules} Regeln · {notifications} Benachrichtigungen.\n\nWeitere Einträge hinzufügen oder mit Weiter fortfahren. Vorhandene Einträge können in den nächsten Schritten ausgewählt werden. Gespeichert wird erst beim Abschluss.",
+        "menu_options": {
+          "output_add": "Weiteren Eintrag anlegen",
+          "wizard_next": "Weiter",
+          "wizard_previous": "Zurück",
+          "wizard_cancel": "Entwurf verwerfen"
+        }
+      },
+      "wizard_rules": {
+        "title": "Schritt 3 von 4 · Regeln",
+        "description": "Entwurf: {inputs} Eingänge · {outputs} Ausgänge · {rules} Regeln · {notifications} Benachrichtigungen.\n\nWeitere Einträge hinzufügen oder mit Weiter fortfahren. Vorhandene Einträge können in den nächsten Schritten ausgewählt werden. Gespeichert wird erst beim Abschluss.",
+        "menu_options": {
+          "rule_add": "Weiteren Eintrag anlegen",
+          "wizard_next": "Weiter",
+          "wizard_previous": "Zurück",
+          "wizard_cancel": "Entwurf verwerfen"
+        }
+      },
+      "wizard_notifications": {
+        "title": "Schritt 4 von 4 · Benachrichtigungen",
+        "description": "Entwurf: {inputs} Eingänge · {outputs} Ausgänge · {rules} Regeln · {notifications} Benachrichtigungen.\n\nWeitere Einträge hinzufügen oder mit Weiter fortfahren. Vorhandene Einträge können in den nächsten Schritten ausgewählt werden. Gespeichert wird erst beim Abschluss.",
+        "menu_options": {
+          "notification_add": "Weiteren Eintrag anlegen",
+          "wizard_next": "Weiter",
+          "wizard_previous": "Zurück",
+          "wizard_cancel": "Entwurf verwerfen"
+        }
+      },
+      "wizard_routes": {
+        "title": "Benachrichtigungen zuordnen",
+        "description": "Neue Benachrichtigungen: {notifications}\n\nWelche Regeln sollen diese Benachrichtigungen anfordern? Neue Regeln sind vorausgewählt. Ohne Auswahl bleiben die Nachrichten ohne Regelzuordnung.",
+        "data": {
+          "rule_ids": "Regeln auswählen"
+        }
+      },
+      "wizard_review": {
+        "title": "Einrichtung prüfen & abschließen",
+        "description": "**Neue Eingangsquellen:** {inputs}\n\n**Neue Ausgänge und Benachrichtigungen:** {outputs}\n\n**Neue oder zugeordnete Regeln:**\n\n{routing}\n\nBeim Speichern wird die Integration neu geladen. Aktive Eingänge können sofort reale Ausgänge und Nachrichten anfordern. Danach kehrst du zur Konfigurationsübersicht zurück.",
+        "data": {
+          "action": "Aktion",
+          "confirm": "Einrichtung und reale Alarmziele geprüft – jetzt übernehmen"
         }
       }
     },
