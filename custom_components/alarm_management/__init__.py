@@ -7,7 +7,14 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady, HomeAssistantError
 
+<<<<<<< Updated upstream
 from .const import DOMAIN, SERVICES
+=======
+from .const import DOMAIN, SERVICES, VERSION
+from .configuration import prepare_configuration
+from .groups import load_groups, expand_bindings, validate_catalogue
+from .discovery import SmokeDiscovery
+>>>>>>> Stashed changes
 from .manager import AlarmManager
 from .input_config import load_sources
 from .input_monitor import InputMonitor
@@ -23,14 +30,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryError("Unsupported alarm configuration")
     manager = AlarmManager(hass, entry.entry_id)
     try:
+<<<<<<< Updated upstream
         sources = load_sources(dict(entry.options))
         options = ensure_rule_options(dict(entry.options), sources)
         rules = load_rules(options, sources)
         options = ensure_output_options(options, rules)
         outputs, bindings = load_output_config(options, rules)
+=======
+        options, sources, rules, outputs, bindings = prepare_configuration(entry.options)
+    except ValueError as err:
+        raise ConfigEntryError(f"Alarm Management {VERSION}: {err}") from err
+    try:
+>>>>>>> Stashed changes
         await manager.async_load()
     except ValueError as err:
-        raise ConfigEntryError("Invalid alarm storage, inputs or rules; inspect backup and logs") from err
+        raise ConfigEntryError(f"Alarm Management {VERSION}: gespeicherte Alarmvorfälle: {err}") from err
     except OSError as err:
         raise ConfigEntryNotReady("Alarm storage unavailable") from err
     updates = {"options": options, "data": {"execution_mode": "live"}}

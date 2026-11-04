@@ -1,7 +1,11 @@
 {
   "domain": "alarm_management",
   "name": "Alarm Management",
+<<<<<<< Updated upstream
   "version": "0.7.0",
+=======
+  "version": "1.1.0",
+>>>>>>> Stashed changes
   "config_flow": true,
   "documentation": "https://github.com/pherrmann31/alarm-management",
   "integration_type": "service",
