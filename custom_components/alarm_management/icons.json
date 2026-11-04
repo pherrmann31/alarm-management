@@ -28,6 +28,24 @@
           "idle": "mdi:shield-check-outline",
           "format": "mdi:format-letter-case"
         }
+      },
+      "notification_details": {
+        "sections": {
+          "alarm": "mdi:alarm-light-outline",
+          "acknowledged": "mdi:check-circle-outline",
+          "idle": "mdi:shield-check-outline",
+          "delivery": "mdi:devices",
+          "pushover": "mdi:message-alert-outline"
+        }
+      },
+      "notification_edit_details": {
+        "sections": {
+          "alarm": "mdi:alarm-light-outline",
+          "acknowledged": "mdi:check-circle-outline",
+          "idle": "mdi:shield-check-outline",
+          "delivery": "mdi:devices",
+          "pushover": "mdi:message-alert-outline"
+        }
       }
     }
   },
@@ -43,6 +61,9 @@
     },
     "retry_outputs": {
       "service": "mdi:refresh"
+    },
+    "acknowledge_popup": {
+      "service": "mdi:check-circle-outline"
     }
   }
 }

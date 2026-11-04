@@ -9,11 +9,11 @@ from uuid import uuid4
 from .const import MAX_LONG_TEXT, MAX_OUTPUTS, OUTPUT_CONFIG_KEY, OUTPUT_CONFIG_VERSION
 from .input_config import InputValidationError
 
-KINDS = ("switch", "short_text", "long_text")
+KINDS = ("switch", "short_text", "long_text", "notification", "overlay")
 PHASES = ("alarm", "acknowledged", "idle")
 PLACEHOLDERS = {"regel", "quelle", "bereich", "alarmtyp", "status"}
 DOMAINS = {"switch": ("switch", "light", "siren", "input_boolean"),
-           "short_text": ("text", "input_text"), "long_text": ("text", "input_text")}
+           "short_text": ("text", "input_text"), "long_text": ("text", "input_text"), "notification": (), "overlay": ()}
 
 
 @dataclass(frozen=True)
@@ -28,9 +28,40 @@ class OutputDefinition:
     alarm_value: str
     acknowledged_value: str
     idle_value: str
+    notification: dict | None = None
 
     def to_dict(self):
         return asdict(self)
+
+
+def validate_notification(data, kind):
+    if not isinstance(data, dict) or set(data) != {"routes", "title", "devices", "priority"}:
+        raise InputValidationError("base", "invalid_notification")
+    routes = data['routes']
+    if (not isinstance(routes, list) or not 1 <= len(routes) <= 20 or
+            not all(isinstance(route,str) for route in routes) or len(set(routes)) != len(routes)):
+        raise InputValidationError("routes", "invalid_notification")
+    for route in routes:
+        if not re.fullmatch(r"(entity:notify\.[a-z0-9_]+|mobile_app:notify\.mobile_app_[a-z0-9_]+|pushover:notify\.[a-z0-9_]+|browser:[0-9a-f]{32})", route):
+            raise InputValidationError("routes", "invalid_notification")
+        if route.startswith('browser:') != (kind == 'overlay'):
+            raise InputValidationError('routes', 'invalid_notification')
+        if route.split(".")[-1] in ("notify", "send_message", "reload", "send"):
+            raise InputValidationError("routes", "invalid_notification")
+    if not isinstance(data["title"], str) or len(data["title"]) > 80:
+        raise InputValidationError("title", "invalid_notification")
+    try:
+        validate_text(data["title"], "long_text", "latin-1")
+    except ValueError as err:
+        raise InputValidationError("title", str(err)) from err
+    if (not isinstance(data["devices"], str) or len(data["devices"]) > 200 or
+            (data["devices"] and not re.fullmatch(r"[a-zA-Z0-9_-]+(?:,[a-zA-Z0-9_-]+)*", data["devices"]))):
+        raise InputValidationError("devices", "invalid_notification")
+    if type(data["priority"]) is not int or data["priority"] not in (-2, -1, 0, 1):
+        raise InputValidationError("priority", "invalid_notification")
+    if not any(route.startswith("pushover:") for route in routes) and (data["devices"] or data["priority"]):
+        raise InputValidationError("base", "invalid_notification")
+    return deepcopy(data)
 
 
 def template_fields(value):
@@ -69,7 +100,13 @@ def build_output(data, *, output_id=None, registry_id=None):
     kind = data.get("kind")
     if kind not in KINDS:
         raise InputValidationError("kind", "invalid_output")
+    notification = validate_notification(data.get("notification"), kind) if kind in ("notification", "overlay") else None
+    if kind not in ("notification", "overlay") and data.get("notification") is not None:
+        raise InputValidationError("base", "invalid_notification")
     entity_id = data.get("entity_id") or None
+    if notification:
+        if entity_id is not None:
+            raise InputValidationError("entity_id", "invalid_notification")
     if entity_id is not None:
         if (not isinstance(entity_id, str) or not re.fullmatch(r"[a-z0-9_]+\.[a-z0-9_]+", entity_id)
                 or entity_id.split(".")[0] not in DOMAINS[kind]):
@@ -89,6 +126,8 @@ def build_output(data, *, output_id=None, registry_id=None):
         else:
             try:
                 validate_text(value, kind, encoding)
+                if kind in ('notification','overlay') and len(''.join(part[0] for part in template_fields(value))) > 1024:
+                    raise ValueError('notification_too_long')
             except ValueError as err:
                 raise InputValidationError(field, str(err)) from err
     output_id = output_id if output_id is not None else uuid4().hex
@@ -97,11 +136,18 @@ def build_output(data, *, output_id=None, registry_id=None):
     if registry_id is not None and (not isinstance(registry_id, str) or not registry_id or entity_id is None):
         raise InputValidationError("base", "invalid_output")
     return OutputDefinition(output_id, name.strip(), kind, entity_id, registry_id,
-                            data["enabled"], encoding, data["alarm_value"], data["acknowledged_value"], data["idle_value"])
+                            data["enabled"], encoding, data["alarm_value"], data["acknowledged_value"], data["idle_value"], notification)
 
 
 def load_output_config(options, rules):
     config = options.get(OUTPUT_CONFIG_KEY)
+    if isinstance(config, dict) and type(config.get('version')) is int and config.get("version") == 1:
+        config = deepcopy(config)
+        config["version"] = OUTPUT_CONFIG_VERSION
+        if isinstance(config.get("outputs"), list):
+            for item in config["outputs"]:
+                if isinstance(item, dict):
+                    item.setdefault("notification", None)
     if (not isinstance(config, dict) or set(config) != {"version", "outputs", "bindings"}
             or type(config["version"]) is not int or config["version"] != OUTPUT_CONFIG_VERSION
             or not isinstance(config["outputs"], list) or len(config["outputs"]) > MAX_OUTPUTS
@@ -139,5 +185,6 @@ def ensure_output_options(options, rules):
     result = deepcopy(dict(options))
     if OUTPUT_CONFIG_KEY not in result:
         result[OUTPUT_CONFIG_KEY] = serialize_output_config([], {}, rules)
-    load_output_config(result, rules)
+    outputs, bindings = load_output_config(result, rules)
+    result[OUTPUT_CONFIG_KEY] = serialize_output_config(outputs, bindings, rules)
     return result

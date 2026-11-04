@@ -109,8 +109,11 @@ class FakeHass:
     def __init__(self, options=None):
         self.entry = types.SimpleNamespace(entry_id="integration", options=options or {})
         self.registry = FakeRegistry()
+        self.devices = {}
+        self.services = types.SimpleNamespace(async_services=lambda:{'notify':{'mobile_app_phone':{},'pushover':{}}},has_service=lambda *args:True)
         self.values = {"input_boolean.test_alarm": "off"}
         self.states = types.SimpleNamespace(get=lambda item: types.SimpleNamespace(state=self.values[item], attributes={"friendly_name": "Test Alarm"}) if item in self.values else None)
+        self.states.async_all = lambda domain: [types.SimpleNamespace(entity_id=key,attributes={'friendly_name':key}) for key in self.values if key.startswith(domain+'.')]
         self.bus = FakeBus()
         self.trackers = []
 
@@ -153,6 +156,7 @@ def import_adapters():
     areas.async_get = lambda hass: types.SimpleNamespace(async_get_area=lambda area_id: types.SimpleNamespace(name="Flur"))
     areas.EVENT_AREA_REGISTRY_UPDATED = "area_registry_updated"
     modules["homeassistant.helpers.device_registry"].EVENT_DEVICE_REGISTRY_UPDATED = "device_registry_updated"
+    modules["homeassistant.helpers.device_registry"].async_get = lambda hass: types.SimpleNamespace(devices=hass.devices)
     for item in ("EntitySelector", "SelectSelector", "TextSelector"):
         setattr(modules["homeassistant.helpers.selector"], item, FakeSelector)
     modules["homeassistant.helpers.event"].async_track_state_change_event = lambda hass, ids, callback: hass.track(ids, callback)
@@ -235,7 +239,7 @@ class FlowTests(unittest.IsolatedAsyncioTestCase):
         flow = flows.AlarmManagementConfigFlow.async_get_options_flow(None)
         flow.hass = FakeHass()
         result = await flow.async_step_init()
-        self.assertEqual(result["menu_options"], ["status", "inputs", "rules", "outputs"])
+        self.assertEqual(result["menu_options"], ["status", "inputs", "rules", "outputs", "notifications"])
         self.assertEqual((await flow.async_step_inputs())["menu_options"], ["add", "overview", "init"])
 
     async def test_existing_setup_still_requires_simulation_confirmation(self):

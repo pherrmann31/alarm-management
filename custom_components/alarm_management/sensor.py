@@ -245,7 +245,8 @@ class OutputSummarySensor(SensorEntity):
         execution_errors = any(record["status"] in ("failed", "mismatch") for key, record in self._manager.session.executions.items() if key in self._manager.session.output_plan)
         if self._manager.delivery_error or execution_errors or any(item["status"] == "error" for item in self._manager.session.output_plan.values()):
             return "Ausgabefehler"
-        statuses = [record["status"] for key, record in self._manager.session.executions.items() if key in self._manager.session.output_plan]
+        notifications = {output.id for output in self._manager.outputs if output.notification}
+        statuses = [record["status"] for key, record in self._manager.session.executions.items() if key in self._manager.session.output_plan and (key not in notifications or record['status']!='sent')]
         if "pending" in statuses:
             return "Ausgabe läuft"
         return "Rückmeldung offen" if "sent" in statuses else "Bereit"
@@ -304,7 +305,7 @@ class OutputValueSensor(OutputSummarySensor):
         self._output_kind = output.kind
         self._output_domain = output.entity_id.split(".", 1)[0] if output.entity_id else None
         self._attr_unique_id = f"{entry.entry_id}_output_{output.id}"
-        label = {"switch": "Schalten", "short_text": "Kurztext", "long_text": "Langtext"}[output.kind]
+        label = {"switch": "Schalten", "short_text": "Kurztext", "long_text": "Langtext", "notification":"Benachrichtigung", "overlay":"Browser-Pop-up"}[output.kind]
         self._attr_name = f"{label} · {output.name}"
 
     @property
@@ -315,6 +316,8 @@ class OutputValueSensor(OutputSummarySensor):
             return "mdi:format-letter-case"
         if self._output_kind == "long_text":
             return "mdi:text-long"
+        if self._output_kind in ('notification','overlay'):
+            return 'mdi:cellphone-message' if self._output_kind=='notification' else 'mdi:tablet-dashboard'
         return {"siren": "mdi:bullhorn", "light": "mdi:lightbulb-outline"}.get(self._output_domain, "mdi:toggle-switch-outline")
 
     @property
@@ -329,6 +332,8 @@ class OutputValueSensor(OutputSummarySensor):
             return "Ausgabefehler"
         if plan["status"] == "disabled":
             return "Rücksetzen ausstehend" if delivery.get("owned") else "Deaktiviert"
+        if self._output_kind in ('notification','overlay'):
+            return {'sent':'An HA übergeben','pending':'Wird gesendet','idle':'Keine Nachricht angefordert'}.get(delivery.get('status'),'Bereit')
         if plan["entity_id"] and delivery.get("status") == "idle":
             return "Nicht angefordert"
         return (plan["value"] or "")[:255]
@@ -342,13 +347,15 @@ class OutputValueSensor(OutputSummarySensor):
         delivery = self._manager.session.executions.get(self._output_id, {})
         preview = isinstance(value, str) and len(value.encode("utf-8")) > 8000
         errors = {"short_text_too_long": "Kurztext überschreitet 14 Byte.",
+                  "notification_too_long": "Nachricht überschreitet 80 Zeichen Titel oder 1024 Zeichen Text.",
                   "short_text_invalid": "Kurztext enthält ungeeignete Steuerzeichen oder Zeilenumbrüche.",
                   "invalid_text_character": "Text enthält ein unzulässiges Nullzeichen.",
                   "unsupported_character": "Text enthält Zeichen außerhalb des gewählten Zeichensatzes.",
                   "text_too_long": "Langtext überschreitet 4096 Zeichen; angezeigter Wert ist nur eine Fehlervorschau.",
                   "target_text_length": "Text passt nicht zur Mindest-/Maximallänge der Zielentität.",
                   "target_unavailable": "Zielentität fehlt oder ist nicht verfügbar."}
-        return {"execution_mode": "live", "phase": plan["phase"], "status": plan["status"],
+        recipients = {key: {'name':item['name'], 'status':item['status'], 'error':item['error']} for key,item in self._manager.session.executions.items() if key.startswith(self._output_id+'_notify_')}
+        return {"execution_mode": "live", "phase": plan["phase"], "status": plan["status"], "recipient_status":recipients,
                 "target_entity_id": plan["entity_id"], "requesting_rule_count": len(plan["rules"]),
                 "value": value[:255] if preview else value, "value_preview_only": preview,
                 "error": plan["error"], "error_message": errors.get(plan["error"]),

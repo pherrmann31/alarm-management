@@ -1,102 +1,144 @@
-# Alarm Management v0.7.0 — übersichtliche Konfiguration
+# Alarm Management v0.9.0 — eigene Benachrichtigungsverwaltung
 
-Für Home Assistant OS / Core 2026.10.4. Dieses Update überarbeitet die normale
-HA-Konfiguration und die Darstellung der Entitäten. Echte Geräteausgaben aus v0.6
-bleiben aktiv. Alarm-, Regel-, Speicher- und Ausführungslogik wurden nicht verändert.
+Für Home Assistant OS / Core 2026.10.4. Eingänge sammeln Signale, Regeln werten sie aus,
+Ausgänge und Benachrichtigungen verteilen die passenden Zustände und Nachrichten.
+Bestehende Einstellungen, IDs und Regelzuordnungen bleiben erhalten.
 
-## Installation über HACS
+## Neue Navigation
 
-Dieses öffentliche Repository lässt sich als benutzerdefiniertes HACS-Repository
-vom Typ **Integration** hinzufügen: https://github.com/pherrmann31/alarm-management
+Das Hauptmenü enthält Status & Überblick sowie:
 
-Anschließend in HACS **Alarm Management** herunterladen und Home Assistant neu starten.
-Bei der erstmaligen Einrichtung zusätzlich unter Geräte & Dienste die Integration hinzufügen.
-Bei einer bereits vorhandenen manuellen Installation den bestehenden Eintrag behalten.
-Ausführliche Erstveröffentlichung und Übernahme: [GITHUB-ANLEITUNG.md](GITHUB-ANLEITUNG.md).
-Der Code steuert konfigurierte Ausgänge tatsächlich; vor Übernahme Backup erstellen.
+- **Eingangsquellen** — vorhandene HA-Signale und ihre Auslösezustände.
+- **Regelverwaltung** — Eingangsbedingung, Alarmtyp sowie getrennte Auswahl für
+  Schalt-/Textausgänge und Benachrichtigungen.
+- **Ausgänge verwalten** — ausschließlich Schalten, Kurztext und Langtext.
+- **Benachrichtigungen** — die Typen **Benachrichtigung** (HA-App/Pushover)
+  und **Pop-up Nachricht Browser** (Browser Mod).
 
-## Manuelles Update von v0.6.0
+Bei Benachrichtigungen erscheint im ersten Schritt kein Zielentitätsfeld mehr.
+Empfänger, Titel und Nachricht werden im folgenden Schritt gewählt. Vorhandene
+Push-/Overlay-Einträge sind automatisch hier sichtbar; keine Neuanlage erforderlich.
+Ausgänge und Benachrichtigungen teilen sich weiterhin das Limit von insgesamt 20 Einträgen.
 
-1. HA-Backup erstellen. Testeingänge ausschalten und Testalarme zurücksetzen.
-   Bestehende aktive Anforderungen können nach einem Neustart weiter ausgeführt werden.
-2. `alarm_management-v0.7.0.zip` am PC entpacken. Den enthaltenen Ordner
-   `alarm_management` nach `/config/custom_components/` kopieren und vorhandene Dateien
-   ersetzen/zusammenführen. Ziel: `/config/custom_components/alarm_management/manifest.json`.
-   Es darf kein weiterer Ordner `alarm_management` darunter entstehen.
-3. **Deine vorhandenen PNGs unter `brand/` behalten.** Den Ordner zusammenführen,
-   nicht erst löschen. Das Paket enthält dort nur die Anleitung und überschreibt keine PNGs.
-4. Home Assistant vollständig neu starten, Browser mit Strg+F5 aktualisieren.
-5. Unter Einstellungen → Geräte & Dienste → Alarm Management die Version 0.7.0 prüfen
-   und über das Zahnrad die Konfiguration öffnen. Die vorhandene Integration behalten.
+Die Regelauswahl zeigt den Namen, bei Bedarf mit „deaktiviert“. Die störenden UND/ODER-
+Zusätze entfallen. Die Bedingung bleibt einstellbar: mindestens ein Eingang oder alle
+gewählten Eingänge gleichzeitig. Die Auswertungslogik wurde dadurch nicht entfernt.
 
-Eingänge, Regeln, Ausgänge, Zuordnungen, gespeicherte Alarme und Entitäts-IDs bleiben
-erhalten. Store-Schema bleibt 5; es gibt gegenüber v0.6 keine neue Datenmigration.
-V0.6 unterstützt weiterhin Migrationen aus älteren Store-Schemata 1–4. Bei einem
-Update direkt aus v0.5 oder älter deshalb auch den Abschnitt zu echten Ausgaben lesen.
+## Texte für Quittierung und Reset
 
-## Was jetzt übersichtlicher ist
+Neue Benachrichtigungen sind vorbelegt mit:
 
-- Hauptmenü mit aktuellem Alarmzustand, Anzahl der Alarme sowie Eingängen, Regeln und Ausgängen.
-- **Status & Überblick:** Momentaufnahme mit Alarmquellen, ausgelösten Regeln und Fehlerzahlen.
-- Kürzere Dialogtexte, Erläuterungen direkt an den Feldern und beschreibende Menüuntertitel.
-- **Regeln:** oben Name/Aktivierung, darunter **Wenn …** mit Eingängen und UND/ODER
-  sowie **Dann …** mit Alarmtyp und Ausgangszuordnung.
-- **Ausgänge:** oben Name/Ziel/Aktivierung. Werte für **Bei Alarm**, **Nach Quittierung**
-  und **In Ruhe / nach Reset** in eigenen Abschnitten. Quittierung und Ruhe sind anfangs
-  eingeklappt; beim Kurztext ebenso der Zeichensatz. Ein Fehler öffnet den betroffenen Abschnitt.
-- Eingangsübersicht mit Zustand und Bereich; Regelübersicht mit Wenn/Dann und Ausgängen;
-  Ausgangsübersicht mit Typ, Ziel, Regelbindung und Ausführungsstatus.
-- **Weiter** führt aus den Übersichten zurück ins jeweilige Menü, ohne zu speichern
-  oder neu zu laden. Statuswerte sind Momentaufnahmen und werden beim Öffnen ermittelt.
-- Mehrere neue Einträge lassen sich wie bisher nacheinander anlegen und gemeinsam speichern.
+- Quittierung: `Alarm quittiert: {regel}` sowie `Quelle: {quelle}`.
+- Erfolgreicher Reset: `Reset erfolgreich. Alarmverwaltung ist bereit.`
 
-## Darstellung der Entitäten
+Beide Texte sind frei änderbar. Bestehende eigene Texte und absichtlich leere Werte
+werden beim Update nicht überschrieben. Bei vorhandenen Einträgen die Texte bei Bedarf
+unter Benachrichtigungen → Bearbeiten eintragen. Leere normale Zustandsmeldungen bleiben
+stumm; Rückmeldungen nach einer Pop-up-Quittierung und Resetfehler werden dennoch angezeigt.
+Keine automatische Ruhemeldung bei erstmaliger Einrichtung.
 
-Die Geräteseite zeigt die zentralen Anzeigen und Bedienknöpfe im Hauptbereich.
-Zähler und Verläufe sind als Diagnose kategorisiert und stehen im HA-Bereich **Diagnose**.
-Das beeinflusst auch automatisch erzeugte Dashboard-Ansichten. Vorhandene manuelle
-Dashboard-Karten und Automationen behalten ihre Entitäts-IDs.
+## Abgelehnten Reset melden
 
-| Hauptanzeigen | Diagnose |
-| --- | --- |
-| Alarmstatus mit Zustandssymbol | Ausgelöste Eingänge |
-| Alarmquellen, Bereiche, Alarmregeln | Erfüllte Regeln |
-| Ausgabestatus und einzelne Ausgangsanzeigen | Alarmverlauf, Ausgabeverlauf |
-| Quittieren, Reset, Ausgaben erneut versuchen | |
+Ein Reset bei weiterhin ausgelöster oder unklarer Regel wird weiterhin abgelehnt.
+Neu ist die Nachricht an die Benachrichtigungen, die den blockierenden Regeln zugeordnet
+sind. Der Text nennt Regel und Grund, bei passenden Quellen auch deren Namen, z. B.:
 
-Einzelne Ausgangsanzeigen heißen standardmäßig `Schalten · Name`, `Kurztext · Name`
-oder `Langtext · Name`. Sirenen, Leuchten und Texttypen erhalten passende Symbole,
-Ausgabefehler ein Warnsymbol. Eigene Namen und Symbole aus der HA-Entitätsverwaltung
-können diese Standardwerte übersteuern. Sie werden absichtlich nicht gelöscht.
-Falls ein alter Name bleibt, in der jeweiligen Entität den eigenen Namenswert leeren,
-um wieder den Standard zu verwenden; die Entitäts-ID dabei beibehalten.
+`Reset nicht möglich. Einzelregel: Alarmanlage: weiterhin ausgelöst: Haustür.`
 
-Es handelt sich um native HA-Dialoge und Kategorien. Kein eigener Dashboard- oder
-Frontend-Baustein: Farben, Kartengestaltung, Reihenfolge und der kleine Dienstzeilen-Icon
-werden von Home Assistant festgelegt. Das vorhandene große Integrationslogo bleibt erhalten.
+Bei unklarem Eingang weist die Meldung auf den nicht eindeutigen Eingangsstatus hin.
+Mehrere Gründe werden übersichtlich zusammengefasst; vollständige Daten bleiben im
+Alarmverlauf/der Diagnose. Unbeteiligte Empfänger werden nicht zusätzlich angeschrieben.
+Alarm und Schaltausgänge werden durch den abgelehnten Reset nicht zurückgesetzt.
+Dieselbe Warnung wird bei unveränderter Auswertung nicht fortlaufend neu gesendet;
+ein erneuter bewusster Resetversuch kann eine neue Rückmeldung erzeugen.
 
-## Was gegenüber den bisherigen Plänen umgesetzt ist
+## Quittieren direkt im Browser-Pop-up
 
-Eingänge, bearbeitbare UND/ODER-Regeln, gespeicherte Alarme, Quellen/Bereiche, Quittierung,
-Reset, begrenzte Verläufe, frei zugeordnete Schalt-/Textausgänge und echte Ausführung
-stammen aus den bisherigen Versionen. V0.7 ergänzt deren Konfiguration und Anzeige.
-Es kommen keine neuen Alarmbedingungen oder Geräteaktionen hinzu. Erweiterungen wie
-Zeitpläne, Prioritäten und Einzelalarm-Reset bleiben offen; siehe Grenzen am Ende.
+Aktive Pop-up-Nachrichten erhalten **Quittieren** und **Schließen**.
+Schließen ist nur das Schließen der Anzeige. Quittieren ruft die Alarmverwaltung auf.
+Der Knopf bleibt während der Bearbeitung im Pop-up; nach erfolgreicher Speicherung
+erscheint der konfigurierte Quittierungstext. Ist dieser leer, erscheint stattdessen
+„Quittierung übernommen.“ Die erfolgreiche Quittierung wird im Alarmverlauf gespeichert.
+Die Rückmeldung geht an die Browser-Geräte dieser Benachrichtigung.
 
-## Kurzer Oberflächentest nach dem Update
+Quittiert werden nur die Alarmvorkommen, die zu dieser Pop-up-Benachrichtigung gehören.
+Andere Regeln und der unabhängige manuelle Testalarm bleiben unverändert. Der vorhandene
+allgemeine Quittieren-Knopf in HA quittiert weiterhin alle gespeicherten Alarme.
+Passende Quittierungswerte der betroffenen Schalt-/Textausgänge werden wie bisher angefordert.
 
-1. Eingang öffnen: Name, Ziel, Rohwert und Aktivierung müssen stimmen.
-2. Regel öffnen: unter Wenn die bisherigen Eingänge/Verknüpfung, unter Dann Alarmtyp
-   und Ausgänge prüfen. Ohne Änderung schließen.
-3. Ausgang öffnen: alle drei Wertabschnitte aufklappen, beim Kurztext Zeichensatz prüfen.
-4. Mit eigenen Testhelfern einen Eingang auslösen. Alarmstatus, Quelle, Bereich,
-   Regel und tatsächliche Zielzustände prüfen. Danach quittieren und zurücksetzen.
-5. Status-/Listenübersichten öffnen und mit Weiter zurückgehen; dabei dürfen keine
-   Optionen gespeichert werden. Diagnosebereich und Ausgangssymbole prüfen.
+Eine alte Pop-up-Meldung darf keine nach Reset neu entstandenen Alarme, neu hinzugekommene
+Regeln oder zusätzliche Quellen unbemerkt quittieren. In diesem Fall lehnt der Server
+die Aktion ab und meldet „Quittierung nicht übernommen …“. Der aktuelle Alarm bleibt aktiv.
+Ein Speicherfehler erzeugt keine erfolgreiche Bestätigung. Ohne Browser-Verbindung kann
+die Rückmeldung nicht garantiert angezeigt werden; der tatsächliche HA-Zustand ist maßgeblich.
 
-172 Offline-Tests und Syntax-/Paketprüfung bestanden. Die konkrete Darstellung im
-laufenden Home Assistant wurde hier nicht visuell getestet. Der separate Prüfbericht
-beschreibt genau die durchgeführten Prüfungen und ihre Grenzen.
+Die Aktion `alarm_management.acknowledge_popup` verwendet output_id und einen
+Vorkommensnachweis aus der angezeigten Meldung. Diese Angaben werden automatisch erzeugt;
+keine Schlüssel oder Browser-IDs müssen in ein Pop-up-Template eingetragen werden.
+Browser Mod muss Aktionsknöpfe und deren right_button_action unterstützen.
+
+## Update über HACS
+
+Repository: https://github.com/pherrmann31/alarm-management.
+Entwicklungszweig für diese Version: codex/v0.9-notification-management.
+Erst ein neues Release mit Tag v0.9.0 und diesem Zweig als Target macht die Version als
+Release in HACS auswählbar. Als Testversion veröffentlichen und bewusst installieren.
+
+Vorher vollständiges HA-Backup erstellen, Testeingänge normalisieren und Testalarme
+zurücksetzen, soweit das mit der installierten Version sicher möglich ist. Nach Download
+HA vollständig neu starten. Bestehende Integration behalten und alte Konfigurationsdialoge
+schließen. Erst nach Anzeige von 0.9.0 erneut konfigurieren.
+
+Die Korrekturen für Formular-Standardwerte und den Hänger beim Neuladen aus v0.8.1/v0.8.2
+sind enthalten. Store bleibt Schema 5, Ausgangsoptionen Version 2. Es gibt keine neue
+Dateimigration. Neue Protokollereignisse können von alten Versionen nicht gelesen werden;
+für einen Downgrade das vorherige vollständige Backup wiederherstellen.
+
+## Abnahme mit Testhelfern
+
+1. Navigation prüfen: Schalt-/Textziele nur unter Ausgänge, Push/Pop-ups unter Benachrichtigungen.
+2. Bestehende Regel öffnen: bisherige Schalt-/Textausgänge und Benachrichtigungen müssen in
+   ihren getrennten Listen angehakt bleiben. Namen und Eingangsbedingung kontrollieren.
+3. Einer Testregel eine Handy-Benachrichtigung und eine Browser-Pop-up-Nachricht zuordnen.
+4. Auslösen und Reset bei noch aktivem Eingang drücken: Resetfehler muss am Handy und
+   im Pop-up erscheinen, Alarm/Schaltanforderung müssen bestehen bleiben.
+5. Im aktiven Pop-up Quittieren drücken: Alarmstatus, Ausgangswerte und Rückmeldung prüfen.
+   Eine gleichzeitig aktive, unzugeordnete Regel muss weiterhin aktiv bleiben.
+6. Eingang normal setzen und erfolgreich zurücksetzen: den konfigurierten Resettext prüfen.
+7. Neue Auslösung erzeugen und einen alten Pop-up-Aufruf absetzen: neue Auslösung darf
+   nicht quittiert werden. Dafür keinen produktiven Alarm verwenden.
+8. Neu laden/neustarten und Speicherfehler-Verhalten nur mit Testhelfern prüfen.
+
+218 Offline-Tests bestanden, einschließlich der bisherigen 201 Regressionen und
+17 neuer Prüfungen für Navigation, Zuordnungen, Resetfehler, Pop-up-Quittierung,
+veraltete Meldungen und neue Eingänge während der Speicherung. Keine echte HA-,
+Handy-, Pushover- oder Browser-Mod-Abnahme hier durchgeführt. Siehe VALIDATION.md.
+
+## Technische Grenzen
+
+Titel höchstens 80, Nachricht höchstens 1024 Zeichen nach Ersetzung. Platzhalter:
+{regel}, {quelle}, {bereich}, {alarmtyp}, {status}. Für Textausgänge bleiben die
+bisherigen Grenzen erhalten. Benachrichtigungen benötigen eingerichtete HA-App- oder
+Pushover-Ziele. Pushover-Kontogeräte sind keine auswählbaren HA-Geräte: ihre exakten Namen
+werden im optionalen Pushover-Feld angegeben. Aktionen heißen notify.pushover oder
+notify.pushover_*; andere Namen werden nicht automatisch erkannt.
+
+Browser-Pop-ups benötigen ein verbundenes, registriertes Browser-Mod-Dashboard, etwa in
+Fully Kiosk. Kein automatisches Wecken, kein systemweites Android-Overlay und kein
+automatisches Schließen bei Reset. Andere Pop-up-Automationen können die Anzeige ersetzen.
+An HA übergeben ist keine Bestätigung von Empfang/Anzeige/Lesen auf dem Endgerät.
+
+Ereignisse werden weiterhin als aktueller gewünschter Meldungsstand abgeglichen,
+nicht als unbegrenzte Nachrichtenschlange. Unter schnell aufeinanderfolgenden Änderungen
+können überholte Meldungen durch den neueren Zustand ersetzt werden. Erfolgreiche
+Empfänger werden beim unveränderten Zustand nicht fortlaufend angeschrieben. Manuelles
+Wiederholen eines unklaren Versandversuchs kann trotzdem doppelt zustellen.
+
+## Primärquellen
+
+- [Browser-Mod-Aktionen und Pop-up-Knöpfe](https://github.com/thomasloven/hass-browser_mod/blob/master/documentation/services.md)
+- [HA-App-Benachrichtigungen](https://companion.home-assistant.io/docs/notifications/notifications-basic/)
+- [Pushover in HA](https://www.home-assistant.io/integrations/pushover/)
 
 ## Unterstützte echte Ausgaben
 
@@ -238,7 +280,7 @@ auch im brand-Ordner. Danach HA neu starten und Browser mit Strg+F5 aktualisiere
 
 ## Prüfstand und praktische Grenzen
 
-Siehe `VALIDATION-v0.7.0.md`. Alle Prüfungen hier verwenden eine lokale Python-Umgebung und
+Siehe `VALIDATION.md`. Alle Prüfungen hier verwenden eine lokale Python-Umgebung und
 ausdrücklich benannte HA-Testdoubles. Kein echter HA-Core-Start, keine UI-/Dateispeichermigration
 und keine Hardware wurden hier getestet. „Echte Ausführung implementiert“ ist keine Aussage,
 dass dein System damit bereits abgenommen, ausfallsicher oder als Alarmanlage zertifiziert ist.

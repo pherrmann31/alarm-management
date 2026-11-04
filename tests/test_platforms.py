@@ -31,6 +31,7 @@ def load_platforms():
              "homeassistant.helpers.device_registry", "homeassistant.helpers.dispatcher", "homeassistant.helpers.entity_platform")
     modules = {name: types.ModuleType(name) for name in names}
     modules["probatio"].Schema = lambda data: data
+    modules['probatio'].Required=inputs.FakeMarker
     modules["homeassistant.components.sensor"].SensorEntity = FakeEntity
     modules["homeassistant.components.sensor"].SensorDeviceClass = types.SimpleNamespace(ENUM="enum")
     modules["homeassistant.components.button"].ButtonEntity = FakeEntity
@@ -113,7 +114,7 @@ class PlatformTests(unittest.IsolatedAsyncioTestCase):
         hass.set_state(source.entity_id, "on")
         await manager.async_drain()
         self.assertEqual(manager.session.state, "active")
-        self.assertEqual(set(services), {"trigger_test", "acknowledge", "reset", "retry_outputs"})
+        self.assertEqual(set(services), {"trigger_test", "acknowledge", "reset", "retry_outputs", "acknowledge_popup"})
         self.assertTrue(await lifecycle.async_unload_entry(hass, hass.entry))
         self.assertEqual(hass.trackers, [])
         self.assertEqual(hass.bus.callbacks, [])

@@ -59,7 +59,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise
 
     async def handle_action(call: ServiceCall) -> None:
-        if call.service == "retry_outputs":
+        if call.service == 'acknowledge_popup':
+            await manager.async_acknowledge_popup(call.data['output_id'],call.data['token'])
+        elif call.service == "retry_outputs":
             manager.executor.retry()
         else:
             await manager.async_action(call.service)
@@ -68,6 +70,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.services.async_register(
             DOMAIN, service, handle_action, schema=probatio.Schema({})
         )
+    hass.services.async_register(DOMAIN,'acknowledge_popup',handle_action,
+        schema=probatio.Schema({probatio.Required('output_id'):str,probatio.Required('token'):str}))
     manager.executor.start()
     return True
 
@@ -81,7 +85,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             manager.executor.schedule()
             return False
         manager.stop_inputs()
-        for service in (*SERVICES, "retry_outputs"):
+        for service in (*SERVICES, "retry_outputs", 'acknowledge_popup'):
             hass.services.async_remove(DOMAIN, service)
     await manager.async_drain()
     return True

@@ -5,6 +5,7 @@ from string import Formatter
 
 from .const import HISTORY_LIMIT, MAX_LONG_TEXT
 from .output_config import template_fields
+from .notification import alarm_context, notification_event
 
 
 def _unique(values):
@@ -54,6 +55,10 @@ def plan_outputs(outputs, bindings, rules, session, targets=None):
                     record["error"] = "unsupported_character"
             elif "\x00" in value:
                 record["error"] = "invalid_text_character"
+            if output.kind in ('notification', 'overlay'):
+                title = Formatter().vformat(output.notification['title'], (), alarm_context(alarms,phase))
+                if len(value) > 1024 or len(title) > 80:
+                    record['error'] = 'notification_too_long'
             if output.entity_id and not record["error"]:
                 if not target.get("min_length", 0) <= len(value) <= target.get("max_length", 255):
                     record["error"] = "target_text_length"
@@ -61,6 +66,21 @@ def plan_outputs(outputs, bindings, rules, session, targets=None):
             record["error"] = record["error"] or "target_unavailable"
         if record["error"]:
             record["status"] = "error"
+        if output.notification and output.enabled:
+            event=notification_event(session,output.id,bindings,alarms)
+            if event:
+                if event['event']=='reset_blocked':
+                    record['value']=event['message']
+                elif event['event']=='popup_acknowledged':
+                    record['value']=record['value'] or 'Quittierung übernommen.'
+                else:
+                    record['value']=event['message']
+                if len(record['value'])<=1024 and len(title)<=80 and record['error'] in ('notification_too_long','text_too_long'):
+                    record['error']=None
+                    record['status']='planned'
+                if not record['error'] and len(record['value'])>1024:
+                    record['error']='notification_too_long'
+                    record['status']='error'
     return result
 
 

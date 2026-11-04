@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFl
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.selector import EntitySelector, SelectSelector, TextSelector
 
 from .const import ALARM_TYPES, DOMAIN, INPUT_CONFIG_KEY, MAX_INPUTS, MAX_RULES, RULE_CONFIG_KEY
@@ -67,6 +68,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         self._original_outputs = None
         self._pending_output = None
         self._selected_output_id = None
+        self._notification_mode = False
 
     def _ensure_sources(self) -> None:
         if self._sources is None:
@@ -86,8 +88,10 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         except ValueError:
             return self.async_abort(reason="invalid_configuration")
         return self.async_show_menu(
-            step_id="init", menu_options=["status", "inputs", "rules", "outputs"],
-            description_placeholders={"inputs": str(len(self._sources)), "rules": str(len(self._rules)), "outputs": str(len(self._outputs)),
+            step_id="init", menu_options=["status", "inputs", "rules", "outputs", "notifications"],
+            description_placeholders={"inputs": str(len(self._sources)), "rules": str(len(self._rules)),
+                                      "outputs": str(sum(not item.notification for item in self._outputs)),
+                                      "notifications":str(sum(bool(item.notification) for item in self._outputs)),
                                       **runtime_summary(getattr(self.config_entry, "runtime_data", None))},
         )
 
@@ -309,7 +313,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
 
     def _rule_choices(self):
         return SelectSelector({"options": [
-            {"value": rule.id, "label": f"{rule.name} · {'UND' if rule.mode == 'all' else 'ODER'} · {'aktiviert' if rule.enabled else 'deaktiviert'}"} for rule in self._rules
+            {"value": rule.id, "label": rule.name + (' (deaktiviert)' if not rule.enabled else '')} for rule in self._rules
         ], "mode": "dropdown"})
 
     def _rule_schema(self, values):
@@ -327,18 +331,25 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             }),
             probatio.Required("enabled", default=values["enabled"]): bool,
         }
-        if self._outputs:
+        actuators=[item for item in self._outputs if not item.notification]
+        notifications=[item for item in self._outputs if item.notification]
+        if actuators:
             flat[probatio.Optional("output_ids", default=values.get("output_ids", []))] = SelectSelector({
-                "options": [{"value": item.id, "label": item.name} for item in self._outputs], "multiple": True, "mode": "list"})
+                "options": [{"value": item.id, "label": item.name} for item in actuators], "multiple": True, "mode": "list"})
+        if notifications:
+            flat[probatio.Optional('notification_ids',default=values.get('notification_ids',[]))] = SelectSelector({
+                'options':[{'value':item.id,'label':item.name} for item in notifications],'multiple':True,'mode':'list'})
         schema = {key: value for key, value in flat.items() if str(getattr(key, "schema", getattr(key, "key", key))) in ("name", "enabled")}
         for name, fields in RULE_SECTIONS.items():
             grouped = {key: value for key, value in flat.items() if str(getattr(key, "schema", getattr(key, "key", key))) in fields}
-            schema[probatio.Required(name, default={})] = section(probatio.Schema(grouped), {"collapsed": False})
+            schema[probatio.Required(name)] = section(probatio.Schema(grouped), {"collapsed": False})
         return probatio.Schema(schema)
 
     async def _rule_form(self, step_id, user_input, rule=None):
         values = rule.to_dict() if rule else {"name": "", "input_ids": [], "mode": "any", "alarm_type": "house", "enabled": True}
-        values["output_ids"] = list(self._bindings.get(rule.id, [])) if rule else []
+        assigned_ids=self._bindings.get(rule.id,[]) if rule else []
+        values['output_ids']=[item.id for item in self._outputs if not item.notification and item.id in assigned_ids]
+        values['notification_ids']=[item.id for item in self._outputs if item.notification and item.id in assigned_ids]
         errors = {}
         if user_input is not None:
             try:
@@ -346,9 +357,15 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
                 values.update(user_input)
                 candidate = build_rule(user_input, {item.id for item in self._sources}, rule_id=rule.id if rule else None)
                 assigned = user_input.get("output_ids", [])
+                notifications=user_input.get('notification_ids',[])
+                if not isinstance(notifications,list) or not all(isinstance(item,str) for item in notifications):
+                    raise InputValidationError('notification_ids','invalid_output_assignment')
+                if len(set(notifications))!=len(notifications) or not set(notifications)<={item.id for item in self._outputs if item.notification}:
+                    raise InputValidationError('notification_ids','invalid_output_assignment')
                 if (not isinstance(assigned, list) or not all(isinstance(item, str) for item in assigned)
-                        or len(set(assigned)) != len(assigned) or not set(assigned) <= {item.id for item in self._outputs}):
+                        or len(set(assigned)) != len(assigned) or not set(assigned) <= {item.id for item in self._outputs if not item.notification}):
                     raise InputValidationError("output_ids", "invalid_output_assignment")
+                assigned=assigned+notifications
                 if assigned:
                     self._bindings[candidate.id] = list(assigned)
                 else:
@@ -429,26 +446,42 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         types = {"house": "Hausalarm", "fire": "Feuer", "intrusion": "Einbruch"}
         lines = []
         for rule in self._rules:
-            connection = " ODER " if rule.mode == "any" else " UND "
-            inputs = connection.join(markdown_text(names[input_id]) for input_id in rule.input_ids)
+            condition='Mindestens ein Eingang' if rule.mode=='any' else 'Alle Eingänge gleichzeitig'
+            inputs=', '.join(markdown_text(names[input_id]) for input_id in rule.input_ids)
             state = "Aktiviert" if rule.enabled else "Deaktiviert"
-            lines.append(f"**{markdown_text(rule.name)}** · {state}\n\n**Wenn:** {inputs}\n\n**Dann:** {types[rule.alarm_type]}")
-            assigned = ", ".join(item.name for item in self._outputs if item.id in self._bindings.get(rule.id, [])) or "Keine Ausgänge"
+            lines.append(f"**{markdown_text(rule.name)}** · {state}\n\n**Bedingung:** {condition}\n\n**Eingänge:** {inputs}\n\n**Dann:** {types[rule.alarm_type]}")
+            assigned = ", ".join(item.name for item in self._outputs if not item.notification and item.id in self._bindings.get(rule.id, [])) or "Keine Ausgänge"
             lines[-1] += f"\n\n**Ausgänge:** {markdown_text(assigned)}"
+            notifications=', '.join(item.name for item in self._outputs if item.notification and item.id in self._bindings.get(rule.id,[])) or 'Keine Benachrichtigungen'
+            lines[-1] += f'\n\n**Benachrichtigungen:** {markdown_text(notifications)}'
         return self.async_show_form(step_id="rule_overview", data_schema=probatio.Schema({}), last_step=False,
                                     description_placeholders={"count": str(len(self._rules)), "rules": "\n\n---\n\n".join(lines) or "Noch keine Regeln. Zuerst Eingänge anlegen, dann eine Regel hinzufügen."})
 
     async def async_step_outputs(self, user_input=None):
+        self._notification_mode=False
+        return self._show_output_menu()
+
+    async def async_step_notifications(self, user_input=None):
+        self._notification_mode=True
+        return self._show_output_menu()
+
+    def _visible_outputs(self):
+        return [item for item in self._outputs if bool(item.notification)==self._notification_mode]
+
+    def _output_step(self, suffix):
+        return ('notification_' if self._notification_mode else 'output_')+suffix
+
+    def _show_output_menu(self):
         self._ensure_sources()
-        choices = ["output_add"] if len(self._outputs) < MAX_OUTPUTS else []
-        if self._outputs:
-            choices += ["output_edit", "output_remove"]
-        choices += ["output_overview", "init"]
-        return self.async_show_menu(step_id="outputs", menu_options=choices,
-                                    description_placeholders={"count": str(len(self._outputs)), "limit": str(MAX_OUTPUTS)})
+        choices = [self._output_step('add')] if len(self._outputs) < MAX_OUTPUTS else []
+        if self._visible_outputs():
+            choices += [self._output_step('edit'),self._output_step('remove')]
+        choices += [self._output_step('overview'), 'init']
+        return self.async_show_menu(step_id='notifications' if self._notification_mode else 'outputs',menu_options=choices,
+                                    description_placeholders={"count": str(len(self._visible_outputs())), "limit": str(MAX_OUTPUTS)})
 
     def _output_choices(self):
-        return SelectSelector({"options": [{"value": item.id, "label": f"{item.name} · {KIND_LABELS[item.kind]} · {'aktiviert' if item.enabled else 'deaktiviert'}"} for item in self._outputs], "mode": "dropdown"})
+        return SelectSelector({"options": [{"value": item.id, "label": f"{item.name} · {KIND_LABELS[item.kind]} · {'aktiviert' if item.enabled else 'deaktiviert'}"} for item in self._visible_outputs()], "mode": "dropdown"})
 
     def _validate_output_target(self, data, output_id=None):
         candidate = build_output(data, output_id=output_id)
@@ -474,53 +507,94 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         state = self.hass.states.get(entity_id) if entity_id else None
         entry = er.async_get(self.hass).async_get(entity_id) if entity_id else None
         name = ((getattr(state, "attributes", {}) or {}).get("friendly_name") or getattr(entry, "name", None)
-                or getattr(entry, "original_name", None) or {"switch": "Schaltausgang", "short_text": "Kurztext", "long_text": "Langtext"}[kind])
-        return {"name": name[:80], "kind": kind, "entity_id": entity_id, "encoding": "latin-1", "enabled": True,
+                or getattr(entry, "original_name", None) or KIND_LABELS[kind])
+        values = {"name": name[:80], "kind": kind, "entity_id": entity_id, "encoding": "latin-1", "enabled": True,
                 "alarm_value": "on" if kind == "switch" else "{alarmtyp}" if kind == "short_text" else "{alarmtyp}: {regel} – {quelle} ({bereich})",
                 "acknowledged_value": "off" if kind == "switch" else "Quittiert" if kind == "short_text" else "Quittiert: {regel}",
                 "idle_value": "off" if kind == "switch" else "Bereit"}
+        if kind in ('notification','overlay'):
+            values.update(entity_id=None,alarm_value='{alarmtyp}: {regel}\nQuelle: {quelle}\nBereich: {bereich}',
+                          acknowledged_value='Alarm quittiert: {regel}\nQuelle: {quelle}',idle_value='Reset erfolgreich. Alarmverwaltung ist bereit.',
+                          notification={'routes':[], 'title':'Alarm Management', 'devices':'', 'priority':0})
+        return values
+
+    def _notification_choices(self, kind, selected):
+        choices = {}
+        if kind == 'overlay':
+            registry = dr.async_get(self.hass)
+            for device in registry.devices.values():
+                if any(domain=='browser_mod' for domain,_ in device.identifiers):
+                    choices['browser:'+device.id] = device.name_by_user or device.name or device.id
+        else:
+            registry = er.async_get(self.hass)
+            for entity in self.hass.states.async_all('notify'):
+                registered = registry.async_get(entity.entity_id)
+                if registered and registered.platform == 'mobile_app':
+                    choices['entity:'+entity.entity_id] = (entity.attributes.get('friendly_name') or entity.entity_id)+' · HA-App'
+            services = self.hass.services.async_services().get('notify',{})
+            for name in services:
+                if name.startswith('mobile_app_') and not any(key.startswith('entity:') for key in choices):
+                    choices['mobile_app:notify.'+name] = name+' · HA-App (Aktion)'
+                elif name=='pushover' or name.startswith('pushover_'):
+                    choices['pushover:notify.'+name] = name+' · Pushover'
+        for route in selected:
+            choices.setdefault(route,route+' · gespeichert / derzeit nicht gefunden')
+        return SelectSelector({'options':[{'value':key,'label':value} for key,value in choices.items()], 'multiple':True, 'mode':'list'})
 
     async def async_step_output_add(self, user_input=None):
         self._ensure_sources()
         if len(self._outputs) >= MAX_OUTPUTS:
             return self.async_abort(reason="max_outputs")
         errors = {}
+        kinds=('notification','overlay') if self._notification_mode else ('switch','short_text','long_text')
         if user_input is not None:
             kind = user_input.get("kind")
-            if kind not in KINDS:
+            if kind not in kinds:
                 errors["kind"] = "invalid_output"
             else:
                 values = self._output_defaults(kind, user_input.get("entity_id") or None)
                 try:
-                    self._validate_output_target(values)
+                    if kind not in ('notification','overlay'):
+                        self._validate_output_target(values)
                     self._pending_output = values
                     return await self.async_step_output_details()
                 except InputValidationError as err:
                     errors[err.field] = err.key
-        return self.async_show_form(step_id="output_add", errors=errors, data_schema=probatio.Schema({
-            probatio.Required("kind", default="switch"): SelectSelector({"options": list(KINDS), "translation_key": "output_kind", "mode": "list"}),
-            probatio.Optional("entity_id"): EntitySelector({"filter": {"domain": sorted({domain for domains in DOMAINS.values() for domain in domains})}}),
-        }))
+        schema={probatio.Required('kind',default=kinds[0]):SelectSelector({'options':list(kinds),'translation_key':'output_kind','mode':'list'})}
+        if not self._notification_mode:
+            schema[probatio.Optional('entity_id')]=EntitySelector({'filter':{'domain':sorted({domain for domains in DOMAINS.values() for domain in domains})}})
+        return self.async_show_form(step_id=self._output_step('add'),errors=errors,data_schema=probatio.Schema(schema))
 
     def _output_schema(self, values):
         entity_field = probatio.Required if values["kind"] == "switch" else probatio.Optional
         marker = (entity_field("entity_id", default=values["entity_id"]) if values["kind"] == "switch" and values.get("entity_id") else
                   entity_field("entity_id", description={"suggested_value": values["entity_id"]}) if values.get("entity_id") else entity_field("entity_id"))
-        schema = {probatio.Required("name", default=values["name"]): str,
-                  marker: EntitySelector({"filter": {"domain": list(DOMAINS[values["kind"]])}})}
+        schema = {probatio.Required("name", default=values["name"]): str}
+        if values['kind'] not in ('notification','overlay'):
+            schema[marker] = EntitySelector({"filter": {"domain": list(DOMAINS[values["kind"]])}})
         if values["kind"] == "short_text":
             schema[probatio.Required("encoding", default=values["encoding"])] = SelectSelector({
                 "options": ["latin-1", "ascii"], "translation_key": "output_encoding", "mode": "dropdown"})
         format_fields = {key: value for key, value in schema.items() if str(getattr(key, "schema", getattr(key, "key", key))) == "encoding"}
         schema = {key: value for key, value in schema.items() if str(getattr(key, "schema", getattr(key, "key", key))) != "encoding"}
         schema[probatio.Required("enabled", default=values["enabled"])] = bool
+        if values['kind'] in ('notification','overlay'):
+            schema = {key:value for key,value in schema.items() if str(getattr(key,'schema',getattr(key,'key',key)))!='entity_id'}
+            config = values['notification']
+            delivery = {probatio.Required('routes',default=config['routes']): self._notification_choices(values['kind'],config['routes']),
+                        probatio.Optional('title',default=config['title']): str}
+            schema[probatio.Required('delivery')] = section(probatio.Schema(delivery),{'collapsed':False})
+            if values['kind']=='notification':
+                pushover = {probatio.Optional('devices',default=config['devices']):str,
+                    probatio.Required('priority',default=str(config['priority'])):SelectSelector({'options':['-2','-1','0','1'],'translation_key':'notification_priority','mode':'dropdown'})}
+                schema[probatio.Required('pushover')] = section(probatio.Schema(pushover),{'collapsed':True})
         for group, field in (("alarm", "alarm_value"), ("acknowledged", "acknowledged_value"), ("idle", "idle_value")):
             field_type = probatio.Required if values["kind"] == "switch" else probatio.Optional
             selector = (SelectSelector({"options": ["on", "off"], "translation_key": "switch_value", "mode": "list"})
                                                                       if values["kind"] == "switch" else TextSelector({"multiline": values["kind"] == "long_text"}))
-            schema[probatio.Required(group, default={})] = section(probatio.Schema({field_type(field, default=values[field]): selector}), {"collapsed": group != "alarm"})
+            schema[probatio.Required(group)] = section(probatio.Schema({field_type(field, default=values[field]): selector}), {"collapsed": group != "alarm"})
         if format_fields:
-            schema[probatio.Required("format", default={})] = section(probatio.Schema(format_fields), {"collapsed": True})
+            schema[probatio.Required("format")] = section(probatio.Schema(format_fields), {"collapsed": True})
         return probatio.Schema(schema)
 
     async def _output_form(self, step_id, user_input, output=None):
@@ -536,7 +610,21 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             except InputValidationError as err:
                 return self.async_show_form(step_id=step_id, data_schema=self._output_schema(values), errors={"base": err.key},
                                             description_placeholders={"beispiel": "`{regel}`"})
+            if user_input.get('kind',values['kind'])!=values['kind']:
+                return self.async_show_form(step_id=step_id,data_schema=self._output_schema(values),errors={'base':'invalid_output'},
+                    description_placeholders={'beispiel':'`{regel}`'})
             values.update(user_input)
+            if values['kind'] in ('notification','overlay'):
+                config = dict(values['notification'])
+                for field in ('routes','title','devices','priority'):
+                    if field in user_input:
+                        config[field] = user_input.pop(field)
+                        values.pop(field,None)
+                try:
+                    config['priority'] = int(config['priority'])
+                except (ValueError,TypeError):
+                    config['priority'] = None
+                values['notification'] = config
             # Optional text target can deliberately be cleared.
             if "entity_id" not in user_input:
                 values["entity_id"] = None
@@ -565,42 +653,42 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
     async def async_step_output_details(self, user_input=None):
         if self._pending_output is None:
             return self.async_abort(reason="configuration_changed")
-        return await self._output_form("output_details", user_input)
+        return await self._output_form(self._output_step('details'), user_input)
 
     async def async_step_output_after_add(self, user_input=None):
-        return self.async_show_menu(step_id="output_after_add",
-                                    menu_options=["output_add", "output_finish"] if len(self._outputs) < MAX_OUTPUTS else ["output_finish"],
-                                    description_placeholders={"name": self._last_added, "count": str(len(self._outputs))})
+        return self.async_show_menu(step_id=self._output_step('after_add'),
+                                    menu_options=[self._output_step('add'), self._output_step('finish')] if len(self._outputs) < MAX_OUTPUTS else [self._output_step('finish')],
+                                    description_placeholders={"name": self._last_added, "count": str(len(self._visible_outputs()))})
 
     async def async_step_output_finish(self, user_input=None):
         return self._finish(self._sources)
 
     async def async_step_output_edit(self, user_input=None):
         self._ensure_sources()
-        if not self._outputs:
+        if not self._visible_outputs():
             return self.async_abort(reason="no_outputs")
         if user_input is not None:
             self._selected_output_id = user_input["output_id"]
             return await self.async_step_output_edit_details()
-        return self.async_show_form(step_id="output_edit", data_schema=probatio.Schema({probatio.Required("output_id"): self._output_choices()}))
+        return self.async_show_form(step_id=self._output_step('edit'), data_schema=probatio.Schema({probatio.Required("output_id"): self._output_choices()}))
 
     async def async_step_output_edit_details(self, user_input=None):
-        output = next((item for item in self._outputs if item.id == self._selected_output_id), None)
+        output = next((item for item in self._visible_outputs() if item.id == self._selected_output_id), None)
         if output is None:
             return self.async_abort(reason="configuration_changed")
-        return await self._output_form("output_edit_details", user_input, output)
+        return await self._output_form(self._output_step('edit_details'), user_input, output)
 
     async def async_step_output_remove(self, user_input=None):
         self._ensure_sources()
-        if not self._outputs:
+        if not self._visible_outputs():
             return self.async_abort(reason="no_outputs")
         if user_input is not None:
             self._selected_output_id = user_input["output_id"]
             return await self.async_step_output_confirm_remove()
-        return self.async_show_form(step_id="output_remove", data_schema=probatio.Schema({probatio.Required("output_id"): self._output_choices()}))
+        return self.async_show_form(step_id=self._output_step('remove'), data_schema=probatio.Schema({probatio.Required("output_id"): self._output_choices()}))
 
     async def async_step_output_confirm_remove(self, user_input=None):
-        output = next((item for item in self._outputs if item.id == self._selected_output_id), None)
+        output = next((item for item in self._visible_outputs() if item.id == self._selected_output_id), None)
         if output is None:
             return self.async_abort(reason="configuration_changed")
         used = [rule.name for rule in self._rules if output.id in self._bindings.get(rule.id, [])]
@@ -614,23 +702,58 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
                 errors["base"] = "output_owned"
             else:
                 return self._finish(self._sources, outputs=[item for item in self._outputs if item.id != output.id])
-        return self.async_show_form(step_id="output_confirm_remove", errors=errors,
+        return self.async_show_form(step_id=self._output_step('confirm_remove'), errors=errors,
                                     description_placeholders={"name": output.name, "rules": ", ".join(used) or "—"},
                                     data_schema=probatio.Schema({probatio.Required("confirm", default=False): bool}))
 
     async def async_step_output_overview(self, user_input=None):
         self._ensure_sources()
         if user_input is not None:
-            return await self.async_step_outputs()
-        labels = {"switch": "Schaltausgang", "short_text": "Kurztext · 14 Byte", "long_text": "Langtext"}
+            return await (self.async_step_notifications() if self._notification_mode else self.async_step_outputs())
+        labels = {**KIND_LABELS, "short_text": "Kurztext · 14 Byte"}
         lines = []
-        for item in self._outputs:
+        for item in self._visible_outputs():
             used = ", ".join(rule.name for rule in self._rules if item.id in self._bindings.get(rule.id, [])) or "Noch keiner Regel zugeordnet"
             manager = getattr(self.config_entry, "runtime_data", None)
             delivery = manager.session.executions.get(item.id, {}) if manager else {}
             state = DELIVERY_LABELS.get(delivery.get("status"), "Noch nicht angefordert")
             lines.append(f"**{markdown_text(item.name)}** · {labels[item.kind]} · {'Aktiviert' if item.enabled else 'Deaktiviert'}\n\n"
-                         f"**Ziel:** {markdown_text(item.entity_id or 'Eigene Statusentität')}\n\n"
+                         f"**Ziel:** {markdown_text(', '.join(item.notification['routes']) if item.notification else item.entity_id or 'Eigene Statusentität')}\n\n"
                          f"**Regeln:** {markdown_text(used)}\n\n**Ausführung:** {state}")
-        return self.async_show_form(step_id="output_overview", data_schema=probatio.Schema({}), last_step=False,
-                                    description_placeholders={"count": str(len(self._outputs)), "outputs": "\n\n---\n\n".join(lines) or "Noch keine Ausgänge. Einen Schalt- oder Textausgang hinzufügen und einer Regel zuordnen."})
+        return self.async_show_form(step_id=self._output_step('overview'), data_schema=probatio.Schema({}), last_step=False,
+                                    description_placeholders={"count": str(len(self._visible_outputs())), "outputs": "\n\n---\n\n".join(lines) or "Noch keine Einträge. Einen Eintrag hinzufügen und einer Regel zuordnen."})
+
+    async def async_step_notification_add(self, user_input=None):
+        self._notification_mode=True
+        return await self.async_step_output_add(user_input)
+
+    async def async_step_notification_details(self, user_input=None):
+        self._notification_mode=True
+        return await self.async_step_output_details(user_input)
+
+    async def async_step_notification_after_add(self, user_input=None):
+        self._notification_mode=True
+        return await self.async_step_output_after_add(user_input)
+
+    async def async_step_notification_finish(self, user_input=None):
+        return await self.async_step_output_finish(user_input)
+
+    async def async_step_notification_edit(self, user_input=None):
+        self._notification_mode=True
+        return await self.async_step_output_edit(user_input)
+
+    async def async_step_notification_edit_details(self, user_input=None):
+        self._notification_mode=True
+        return await self.async_step_output_edit_details(user_input)
+
+    async def async_step_notification_remove(self, user_input=None):
+        self._notification_mode=True
+        return await self.async_step_output_remove(user_input)
+
+    async def async_step_notification_confirm_remove(self, user_input=None):
+        self._notification_mode=True
+        return await self.async_step_output_confirm_remove(user_input)
+
+    async def async_step_notification_overview(self, user_input=None):
+        self._notification_mode=True
+        return await self.async_step_output_overview(user_input)
