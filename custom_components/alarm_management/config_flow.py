@@ -13,6 +13,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.selector import EntitySelector, SelectSelector, TextSelector
 
 from .const import ALARM_TYPES, DOMAIN, INPUT_CONFIG_KEY, MAX_INPUTS, MAX_RULES, RULE_CONFIG_KEY
+from .groups import KEY as GROUP_KEY, load_groups, rule_sources
+from .group_flow import GroupFlow
 from .input_config import InputValidationError, build_source, load_sources, serialize_sources
 from .input_monitor import resolve_entity_id
 from .rule_config import build_rule, ensure_rule_options, load_rules, serialize_rules
@@ -51,7 +53,7 @@ class AlarmManagementConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-class AlarmManagementOptionsFlow(OptionsFlowWithReload):
+class AlarmManagementOptionsFlow(GroupFlow, OptionsFlowWithReload):
     """One operation per dialog; HA persists options and reloads on changes."""
 
     def __init__(self) -> None:
@@ -72,6 +74,8 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
 
     def _ensure_sources(self) -> None:
         if self._sources is None:
+            self._groups = load_groups(dict(self.config_entry.options))
+            self._original_groups = deepcopy(self.config_entry.options.get(GROUP_KEY))
             self._sources = list(load_sources(dict(self.config_entry.options)))
             self._original_config = deepcopy(self.config_entry.options.get(INPUT_CONFIG_KEY))
             self._original_rules = deepcopy(self.config_entry.options.get(RULE_CONFIG_KEY))
@@ -88,7 +92,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         except ValueError:
             return self.async_abort(reason="invalid_configuration")
         return self.async_show_menu(
-            step_id="init", menu_options=["status", "inputs", "rules", "outputs", "notifications"],
+            step_id="init", menu_options=["status", "inputs", "groups", "rules", "outputs", "notifications"],
             description_placeholders={"inputs": str(len(self._sources)), "rules": str(len(self._rules)),
                                       "outputs": str(sum(not item.notification for item in self._outputs)),
                                       "notifications":str(sum(bool(item.notification) for item in self._outputs)),
@@ -124,13 +128,28 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
     def _finish(self, sources, rules=None, outputs=None):
         # Do not overwrite a simultaneous configuration change.
         current = dict(self.config_entry.options)
-        if (current.get(INPUT_CONFIG_KEY) != self._original_config or
+        if (current.get(GROUP_KEY) != self._original_groups or
+                current.get(INPUT_CONFIG_KEY) != self._original_config or
                 current.get(RULE_CONFIG_KEY) != self._original_rules or
                 current.get(OUTPUT_CONFIG_KEY) != self._original_outputs):
             return self.async_abort(reason="configuration_changed")
+        current[GROUP_KEY] = deepcopy(self._groups)
         current[INPUT_CONFIG_KEY] = serialize_sources(sources)
         rules = self._rules if rules is None else rules
-        current[RULE_CONFIG_KEY] = serialize_rules(rules, sources)
+        output_items = self._outputs if outputs is None else outputs
+        for group in self._groups['items']:
+            valid = {item.id for item in sources} if group['kind']=='input' else {item.id for item in output_items if bool(item.notification)==(group['kind']=='notification')}
+            if not set(group['members']) <= valid:
+                return self.async_abort(reason='group_member_in_use')
+        remaining = {source.id for source in sources}
+        removed = [source for source in self._sources if source.id not in remaining]
+        for source in removed:
+            if source.entity_registry_id:
+                current[GROUP_KEY]['excluded'] = list(dict.fromkeys([*current[GROUP_KEY]['excluded'], source.entity_registry_id]))
+        for key in ('smoke_ids','house_ids'):
+            current[GROUP_KEY][key] = [identity for identity in current[GROUP_KEY][key] if identity in remaining]
+        current[GROUP_KEY]['assignments'] = {key:value for key,value in self._groups['assignments'].items() if key in {rule.id for rule in rules}}
+        current[RULE_CONFIG_KEY] = serialize_rules(rules, rule_sources(sources, self._groups))
         bindings = {rule_id: assigned for rule_id, assigned in self._bindings.items() if rule_id in {rule.id for rule in rules}}
         current[OUTPUT_CONFIG_KEY] = serialize_output_config(self._outputs if outputs is None else outputs, bindings, rules)
         return self.async_create_entry(title="", data=current)
@@ -150,7 +169,8 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             name = ((getattr(state, "attributes", {}) or {}).get("friendly_name") or
                     getattr(entry, "name", None) or getattr(entry, "original_name", None) or
                     (entity_id.split(".", 1)[-1].replace("_", " ") if entity_id else ""))
-            return {"name": name[:80], "entity_id": entity_id, "trigger_state": "on", "alarm_type": "house", "enabled": True}
+            event_types = state.attributes.get('event_types',[]) if state and entity_id.startswith('event.') else []
+            return {"name": name[:80], "entity_id": entity_id, "trigger_state": event_types[0] if event_types else "on", "alarm_type": "house", "enabled": True}
         values = source.to_dict()
         values["entity_id"] = resolve_entity_id(source, er.async_get(self.hass)) or source.entity_id
         return values
@@ -160,10 +180,13 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         excluded = [item.entity_id for item in er.async_entries_for_config_entry(registry, self.config_entry.entry_id)]
         entity_field = (probatio.Required("entity_id", default=values["entity_id"])
                         if values.get("entity_id") else probatio.Required("entity_id"))
+        state = self.hass.states.get(values.get('entity_id')) if values.get('entity_id') else None
+        event_types = state.attributes.get('event_types', []) if state and values['entity_id'].startswith('event.') else []
+        trigger_selector = SelectSelector({'options':list(dict.fromkeys([*event_types, values['trigger_state']]))}) if event_types else str
         return probatio.Schema({
             probatio.Required("name", default=values["name"]): str,
             entity_field: EntitySelector({"exclude_entities": excluded}),
-            probatio.Required("trigger_state", default=values["trigger_state"]): str,
+            probatio.Required("trigger_state", default=values["trigger_state"]): trigger_selector,
             probatio.Required("enabled", default=values["enabled"]): bool,
         })
 
@@ -176,6 +199,10 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             values.update(user_input)
             try:
                 candidate = build_source(user_input, source_id=source.id if source else None)
+                if candidate.entity_id.startswith('event.'):
+                    state=self.hass.states.get(candidate.entity_id)
+                    if state is None or candidate.trigger_state not in state.attributes.get('event_types',[]):
+                        raise InputValidationError('trigger_state','invalid_state')
                 registry_entry = er.async_get(self.hass).async_get(candidate.entity_id)
                 if registry_entry and registry_entry.config_entry_id == self.config_entry.entry_id:
                     raise InputValidationError("entity_id", "own_entity")
@@ -303,7 +330,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
     async def async_step_rules(self, user_input=None):
         self._ensure_sources()
         choices = []
-        if self._sources and len(self._rules) < MAX_RULES:
+        if rule_sources(self._sources, self._groups) and len(self._rules) < MAX_RULES:
             choices.append("rule_add")
         if self._rules:
             choices += ["rule_edit", "rule_remove"]
@@ -319,8 +346,9 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
     def _rule_schema(self, values):
         flat = {
             probatio.Required("name", default=values["name"]): str,
+            probatio.Required('priority', default=str(values.get('priority',0))): SelectSelector({'options':[{'value':str(i),'label':str(i)+(' – höchste Priorität' if i==5 else '')} for i in range(6)]}),
             probatio.Required("input_ids", default=values["input_ids"]): SelectSelector({
-                "options": [{"value": item.id, "label": selection_labels(self._sources)[item.id]} for item in self._sources],
+                "options": [{"value": item.id, "label": item.name} for item in rule_sources(self._sources, self._groups)],
                 "multiple": True, "mode": "list",
             }),
             probatio.Required("mode", default=values["mode"]): SelectSelector({
@@ -331,6 +359,8 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             }),
             probatio.Required("enabled", default=values["enabled"]): bool,
         }
+        flat[probatio.Optional('group_ids', default=values.get('group_ids', []))] = SelectSelector({
+            'options': [{'value':g['id'],'label':g['name']} for g in self._groups['items'] if g['kind']!='input'], 'multiple':True})
         actuators=[item for item in self._outputs if not item.notification]
         notifications=[item for item in self._outputs if item.notification]
         if actuators:
@@ -339,7 +369,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         if notifications:
             flat[probatio.Optional('notification_ids',default=values.get('notification_ids',[]))] = SelectSelector({
                 'options':[{'value':item.id,'label':item.name} for item in notifications],'multiple':True,'mode':'list'})
-        schema = {key: value for key, value in flat.items() if str(getattr(key, "schema", getattr(key, "key", key))) in ("name", "enabled")}
+        schema = {key: value for key, value in flat.items() if str(getattr(key, "schema", getattr(key, "key", key))) in ("name", "enabled", "priority")}
         for name, fields in RULE_SECTIONS.items():
             grouped = {key: value for key, value in flat.items() if str(getattr(key, "schema", getattr(key, "key", key))) in fields}
             schema[probatio.Required(name)] = section(probatio.Schema(grouped), {"collapsed": False})
@@ -347,7 +377,9 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
 
     async def _rule_form(self, step_id, user_input, rule=None):
         values = rule.to_dict() if rule else {"name": "", "input_ids": [], "mode": "any", "alarm_type": "house", "enabled": True}
+        values['priority']=self._groups['priorities'].get(rule.id,0) if rule else 0
         assigned_ids=self._bindings.get(rule.id,[]) if rule else []
+        values['group_ids']=self._groups['assignments'].get(rule.id,[]) if rule else []
         values['output_ids']=[item.id for item in self._outputs if not item.notification and item.id in assigned_ids]
         values['notification_ids']=[item.id for item in self._outputs if item.notification and item.id in assigned_ids]
         errors = {}
@@ -355,7 +387,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
             try:
                 user_input = flatten_sections(user_input, RULE_SECTIONS)
                 values.update(user_input)
-                candidate = build_rule(user_input, {item.id for item in self._sources}, rule_id=rule.id if rule else None)
+                candidate = build_rule(user_input, {item.id for item in rule_sources(self._sources, self._groups)}, rule_id=rule.id if rule else None)
                 assigned = user_input.get("output_ids", [])
                 notifications=user_input.get('notification_ids',[])
                 if not isinstance(notifications,list) or not all(isinstance(item,str) for item in notifications):
@@ -365,6 +397,14 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
                 if (not isinstance(assigned, list) or not all(isinstance(item, str) for item in assigned)
                         or len(set(assigned)) != len(assigned) or not set(assigned) <= {item.id for item in self._outputs if not item.notification}):
                     raise InputValidationError("output_ids", "invalid_output_assignment")
+                group_ids = user_input.get('group_ids', [])
+                if not isinstance(group_ids,list) or not set(group_ids) <= {g['id'] for g in self._groups['items'] if g['kind']!='input'}:
+                    raise InputValidationError('group_ids','invalid_output_assignment')
+                self._groups['assignments'][candidate.id] = list(dict.fromkeys(group_ids))
+                priority=user_input.get('priority','0')
+                if str(priority) not in ('0','1','2','3','4','5'):
+                    raise InputValidationError('priority','invalid_rule')
+                self._groups['priorities'][candidate.id]=int(priority)
                 assigned=assigned+notifications
                 if assigned:
                     self._bindings[candidate.id] = list(assigned)
@@ -383,7 +423,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
 
     async def async_step_rule_add(self, user_input=None):
         self._ensure_sources()
-        if not self._sources:
+        if not rule_sources(self._sources, self._groups):
             return self.async_abort(reason="no_inputs_for_rules")
         if len(self._rules) >= MAX_RULES:
             return self.async_abort(reason="max_rules")
@@ -442,7 +482,7 @@ class AlarmManagementOptionsFlow(OptionsFlowWithReload):
         self._ensure_sources()
         if user_input is not None:
             return await self.async_step_rules()
-        names = {item.id: item.name for item in self._sources}
+        names = {item.id: item.name for item in rule_sources(self._sources, self._groups)}
         types = {"house": "Hausalarm", "fire": "Feuer", "intrusion": "Einbruch"}
         lines = []
         for rule in self._rules:

@@ -29,7 +29,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    async_add_entities([AlarmStatusSensor(entry), InputStatusSensor(entry),
+    async_add_entities([AlarmStatusSensor(entry), InputStatusSensor(entry), InputFaultSensor(entry),
                         AlarmDetailSensor(entry, "triggered_by"), AlarmDetailSensor(entry, "triggered_areas"),
                         AlarmDetailSensor(entry, "triggered_rules"), AlarmDetailSensor(entry, "journal"), RuleStatusSensor(entry),
                         OutputSummarySensor(entry), OutputLogSensor(entry),
@@ -110,7 +110,7 @@ class InputStatusSensor(SensorEntity):
             "execution_mode": "live", "configured_inputs": len(self._monitor.sources),
             "enabled_inputs": sum(item.enabled for item in self._monitor.sources),
             "unavailable_inputs": sum(item["status"] in ("unknown", "unavailable", "missing", "blocked") for item in items),
-            "inputs": [dict(item) for item in items],
+            "inputs": _bounded_records(items),
         }
 
     async def async_added_to_hass(self) -> None:
@@ -120,6 +120,23 @@ class InputStatusSensor(SensorEntity):
     @callback
     def _async_update(self) -> None:
         self.async_write_ha_state()
+
+
+class InputFaultSensor(InputStatusSensor):
+    _attr_translation_key = 'input_faults'
+    _attr_icon = 'mdi:alert-circle-outline'
+
+    def __init__(self, entry):
+        super().__init__(entry)
+        self._attr_unique_id = f'{entry.entry_id}_input_faults'
+
+    @property
+    def native_value(self):
+        return sum(item['status'] in ('unknown','unavailable','missing','blocked') for item in self._monitor.snapshot)
+
+    @property
+    def extra_state_attributes(self):
+        return {'faults': _bounded_records(item for item in self._monitor.snapshot if item['status'] in ('unknown','unavailable','missing','blocked'))}
 
 
 class AlarmDetailSensor(SensorEntity):

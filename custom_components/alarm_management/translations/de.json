@@ -50,6 +50,9 @@
       },
       "output_log": {
         "name": "Ausgabeverlauf"
+      },
+      "input_faults": {
+        "name": "Gestörte Eingänge"
       }
     },
     "button": {
@@ -74,7 +77,8 @@
           "inputs": "Eingangsquellen",
           "rules": "Regelverwaltung",
           "outputs": "Ausgänge verwalten",
-          "notifications": "Benachrichtigungen"
+          "notifications": "Benachrichtigungen",
+          "groups": "Gruppen & automatische Aufnahme"
         },
         "menu_option_descriptions": {
           "status": "Alarmzustand, Quellen und Fehler ansehen",
@@ -103,7 +107,7 @@
         "data": {
           "name": "Name",
           "entity_id": "HA-Entität",
-          "trigger_state": "Auslösezustand (Rohwert)",
+          "trigger_state": "Auslösezustand / Tastenereignis",
           "enabled": "Eingang aktiviert"
         },
         "data_description": {
@@ -136,7 +140,7 @@
         "data": {
           "name": "Name",
           "entity_id": "HA-Entität",
-          "trigger_state": "Auslösezustand (Rohwert)",
+          "trigger_state": "Auslösezustand / Tastenereignis",
           "enabled": "Eingang aktiviert"
         },
         "data_description": {
@@ -195,7 +199,8 @@
         "description": "Eingangsbedingung festlegen und darunter Ausgänge sowie Benachrichtigungen getrennt zuordnen.",
         "data": {
           "name": "Regelname",
-          "enabled": "Regel aktiviert"
+          "enabled": "Regel aktiviert",
+          "priority": "Priorität für gemeinsame Ausgaben (5 = zuerst)"
         },
         "data_description": {
           "name": "Ein kurzer, eindeutiger Name für Anzeigen und Protokolle.",
@@ -220,7 +225,8 @@
             "data": {
               "alarm_type": "Alarmtyp",
               "output_ids": "Ausgänge zuordnen (optional)",
-              "notification_ids": "Benachrichtigungen zuordnen (optional)"
+              "notification_ids": "Benachrichtigungen zuordnen (optional)",
+              "group_ids": "Ausgabe- und Benachrichtigungsgruppen"
             },
             "data_description": {
               "alarm_type": "Wird für Anzeige und Textplatzhalter verwendet.",
@@ -235,7 +241,8 @@
         "description": "Eingangsbedingung festlegen und darunter Ausgänge sowie Benachrichtigungen getrennt zuordnen.",
         "data": {
           "name": "Regelname",
-          "enabled": "Regel aktiviert"
+          "enabled": "Regel aktiviert",
+          "priority": "Priorität für gemeinsame Ausgaben (5 = zuerst)"
         },
         "data_description": {
           "name": "Ein kurzer, eindeutiger Name für Anzeigen und Protokolle.",
@@ -260,7 +267,8 @@
             "data": {
               "alarm_type": "Alarmtyp",
               "output_ids": "Ausgänge zuordnen (optional)",
-              "notification_ids": "Benachrichtigungen zuordnen (optional)"
+              "notification_ids": "Benachrichtigungen zuordnen (optional)",
+              "group_ids": "Ausgabe- und Benachrichtigungsgruppen"
             },
             "data_description": {
               "alarm_type": "Wird für Anzeige und Textplatzhalter verwendet.",
@@ -665,6 +673,80 @@
           "notification_overview": "Empfänger und zugeordnete Regeln ansehen",
           "init": "Zur Hauptauswahl"
         }
+      },
+      "groups": {
+        "title": "Gruppen verwalten",
+        "menu_options": {
+          "group_add": "Gruppe anlegen",
+          "group_edit": "Gruppe bearbeiten",
+          "group_move": "Melder verschieben",
+          "group_remove": "Gruppe löschen",
+          "discovery": "Rauchmelder automatisch aufnehmen",
+          "house_discovery": "Hausalarmtaster automatisch aufnehmen",
+          "group_test": "Verteilung prüfen",
+          "init": "Zurück"
+        }
+      },
+      "group_add": {
+        "title": "Gruppe anlegen",
+        "data": {
+          "kind": "Gruppentyp"
+        }
+      },
+      "group_edit": {
+        "title": "Gruppe bearbeiten",
+        "data": {
+          "group_id": "Gruppe"
+        }
+      },
+      "group_details": {
+        "title": "Gruppeneinstellungen",
+        "data": {
+          "name": "Name",
+          "members": "Mitglieder",
+          "mode": "Auswertung"
+        }
+      },
+      "group_move": {
+        "title": "Melder verschieben",
+        "data": {
+          "source_id": "Melder",
+          "group_id": "Gruppe"
+        },
+        "description": "Der Melder wird in die Zielgruppe verschoben. Automatische Gesamtgruppen behalten ihn."
+      },
+      "group_remove": {
+        "title": "Gruppe löschen",
+        "data": {
+          "group_id": "Gruppe"
+        },
+        "description": "Verwendete Gruppen zuerst aus den Regeln entfernen. Standardgruppen bleiben erhalten."
+      },
+      "discovery": {
+        "title": "Rauchmelder automatisch aufnehmen",
+        "data": {
+          "auto_smoke": "Neue Rauchmelder automatisch aufnehmen",
+          "targets": "Ausgänge und Benachrichtigungen bei Alarm"
+        },
+        "description": "Erkannte Rauchalarm-Entitäten:\n\n{devices}\n\nBeim Aktivieren wird die Regel „Feueralarm – alle Rauchmelder“ mit den ausgewählten Zielen angelegt bzw. aktualisiert. Neue Melder landen in „Rauchmelder – Standard“. Verschobene Melder bleiben über „Alle Rauchmelder“ überwacht. Batterie-Entitäten werden ausgeschlossen."
+      },
+      "house_discovery": {
+        "title": "Hausalarmtaster automatisch aufnehmen",
+        "data": {
+          "auto_house": "Automatische Aufnahme aktivieren",
+          "house_pattern": "Namensmuster oder Entitäts-ID (z. B. event.hausalarm_*)",
+          "house_label": "HA-Label-ID (optional)",
+          "house_trigger": "Tastenereignis oder Auslösezustand",
+          "targets": "Ausgänge und Benachrichtigungen bei Alarm"
+        },
+        "description": "Mindestens ein eindeutiges Namensmuster oder eine Label-ID ist erforderlich. Sind beide gesetzt, müssen beide passen. Beispiel: event.hausalarm_* und Ereignistyp single. Die MQTT-/Zigbee-Anbindung muss passende HA-Entitäten bereitstellen. Ereignistypen sind geräteabhängig. Beim Aktivieren wird die Regel „Hausalarm – alle Taster“ mit den ausgewählten Zielen angelegt bzw. aktualisiert."
+      },
+      "group_test": {
+        "title": "Verteilung prüfen",
+        "description": "{result}",
+        "data": {
+          "group_id": "Gruppe"
+        }
       }
     },
     "error": {
@@ -695,7 +777,10 @@
       "output_in_use": "Der Ausgang wird noch in Regeln verwendet. Dort die Zuordnung zuerst entfernen.",
       "output_owned": "Dieses Ziel wird noch von der Integration gesteuert. Zuerst Alarm zurücksetzen oder Ausgang deaktivieren und den bestätigten Ruhewert abwarten.",
       "invalid_notification": "Geräteauswahl, Titel oder Pushover-Einstellungen prüfen. Mindestens ein passendes Ziel auswählen.",
-      "notification_too_long": "Nachricht auf höchstens 1024 Zeichen kürzen; Titel höchstens 80 Zeichen nach Ersetzung."
+      "notification_too_long": "Nachricht auf höchstens 1024 Zeichen kürzen; Titel höchstens 80 Zeichen nach Ersetzung.",
+      "group_in_use": "Diese Gruppe wird verwendet oder ist eine geschützte Standardgruppe.",
+      "invalid_house_discovery": "Bitte Erkennungsmuster/Label, Auslösewert und mindestens ein Alarmziel prüfen.",
+      "choose_discovery_targets": "Wähle mindestens einen Ausgang oder eine Benachrichtigung. Lege diese gegebenenfalls zuerst an."
     },
     "abort": {
       "invalid_configuration": "Eingänge, Regeln oder Ausgänge ungültig oder aus neuerer Version. Nichts überschrieben; Protokolle und Backup prüfen.",
@@ -707,7 +792,8 @@
       "max_rules": "Maximal 30 Regeln. Zuerst eine Regel entfernen.",
       "no_rules": "Noch keine Regeln vorhanden. Über Hinzufügen eine Regel anlegen.",
       "max_outputs": "Gemeinsames Limit von 20 Ausgängen und Benachrichtigungen erreicht.",
-      "no_outputs": "Noch keine Ausgänge vorhanden."
+      "no_outputs": "Noch keine Ausgänge vorhanden.",
+      "group_member_in_use": "Der Eintrag wird noch in einer Gruppe verwendet. Entferne zuerst die Gruppenmitgliedschaft."
     }
   },
   "selector": {

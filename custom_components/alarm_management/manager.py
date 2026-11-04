@@ -80,7 +80,8 @@ class AlarmManager:
     def evaluate(self, snapshot=None):
         if snapshot is None:
             snapshot = self.inputs.snapshot if self.inputs is not None else self._last_snapshot
-        return evaluate_rules(self.rules, snapshot)
+        from .groups import aggregate, initial_config
+        return evaluate_rules(self.rules, aggregate(snapshot, getattr(self, "groups", initial_config())))
 
     async def async_load(self) -> None:
         self.session = await async_load_session(self.store)
@@ -161,6 +162,8 @@ class AlarmManager:
 
     @callback
     def stop_inputs(self):
+        if getattr(self, "discovery", None) is not None:
+            self.discovery.stop()
         if self._remove_shutdown is not None:
             self._remove_shutdown()
             self._remove_shutdown = None
@@ -175,6 +178,8 @@ class AlarmManager:
             self._retry = None
 
     async def async_drain(self):
+        if getattr(self, "discovery", None) is not None:
+            await self.discovery.drain()
         while True:
             if self._tasks:
                 await asyncio.gather(*list(self._tasks), return_exceptions=True)

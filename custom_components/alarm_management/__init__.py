@@ -8,6 +8,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady, HomeAssistantError
 
 from .const import DOMAIN, SERVICES
+from .groups import load_groups, expand_bindings, validate_catalogue
+from .discovery import SmokeDiscovery
 from .manager import AlarmManager
 from .input_config import load_sources
 from .input_monitor import InputMonitor
@@ -28,6 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         rules = load_rules(options, sources)
         options = ensure_output_options(options, rules)
         outputs, bindings = load_output_config(options, rules)
+        validate_catalogue(load_groups(options), sources, rules, outputs)
         await manager.async_load()
     except ValueError as err:
         raise ConfigEntryError("Invalid alarm storage, inputs or rules; inspect backup and logs") from err
@@ -37,7 +40,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if getattr(entry, "title", None) == "Alarm Management Simulation":
         updates["title"] = "Alarm Management"
     hass.config_entries.async_update_entry(entry, **updates)
-    manager.rules = rules
+    manager.groups = load_groups(options)
+    group_bindings = manager.groups["assignments"]
+    bindings = expand_bindings({rule.id:list(dict.fromkeys(bindings.get(rule.id, []) + group_bindings.get(rule.id, []))) for rule in rules}, manager.groups)
+    manager.rules = tuple(sorted(rules,key=lambda rule:(-manager.groups['priorities'].get(rule.id,0),rule.id)))
     manager.outputs, manager.output_bindings = outputs, bindings
     manager.inputs = InputMonitor(hass, entry.entry_id, sources)
     manager.output_targets = OutputTargetMonitor(hass, outputs, manager.inputs_changed)
@@ -72,6 +78,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
     hass.services.async_register(DOMAIN,'acknowledge_popup',handle_action,
         schema=probatio.Schema({probatio.Required('output_id'):str,probatio.Required('token'):str}))
+    manager.discovery = SmokeDiscovery(hass, entry, manager)
+    manager.discovery.start()
     manager.executor.start()
     return True
 

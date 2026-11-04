@@ -87,7 +87,7 @@ class OutputConfigTests(unittest.TestCase):
                 config.serialize_output_config([output], bindings, [rules.live_rule()])
 
     def test_output_limit(self):
-        outputs = [config.build_output(values("long_text", name=f"Text {i}")) for i in range(20)]
+        outputs = [config.build_output(values("long_text", name=f"Text {i}")) for i in range(config.MAX_OUTPUTS)]
         config.serialize_output_config(outputs, {}, [])
         with self.assertRaises(ValueError):
             config.serialize_output_config(outputs + [config.build_output(values("long_text"))], {}, [])

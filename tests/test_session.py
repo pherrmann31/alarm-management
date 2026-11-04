@@ -203,7 +203,7 @@ class ImprovedFlowTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_tenth_staged_input_offers_finish_only(self):
         flow = inputs.flows.AlarmManagementOptionsFlow()
-        existing = [inputs.model.build_source(inputs.payload()) for _ in range(9)]
+        existing = [inputs.model.build_source(inputs.payload()) for _ in range(inputs.model.MAX_INPUTS - 1)]
         flow.hass = inputs.FakeHass(inputs.options_for(existing))
         await flow.async_step_init()
         await flow.async_step_add({"entity_id": "input_boolean.test_alarm"})

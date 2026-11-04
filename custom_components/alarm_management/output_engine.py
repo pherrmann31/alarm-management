@@ -19,6 +19,8 @@ def plan_outputs(outputs, bindings, rules, session, targets=None):
     for output in outputs:
         alarms = [record for rule_id, record in session.alarms.items()
                   if rule_id in enabled_rules and output.id in bindings.get(rule_id, [])]
+        rule_order = {rule.id:index for index,rule in enumerate(rules)}
+        alarms.sort(key=lambda alarm:rule_order[alarm['rule_id']])
         phase = "alarm" if any(item["state"] == "active" for item in alarms) else "acknowledged" if alarms else "idle"
         target = targets.get(output.id, {"entity_id": output.entity_id, "available": True, "min_length": 0, "max_length": 255})
         record = {"id": output.id, "name": output.name, "kind": output.kind, "entity_id": target["entity_id"],

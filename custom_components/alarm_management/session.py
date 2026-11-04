@@ -13,6 +13,7 @@ from .const import MAX_LONG_TEXT
 from .notification import reset_error_message
 
 EVENT_LABELS = {
+    "discovery_added": "Neue Melder automatisch aufgenommen",
     "source_triggered": "Eingang ausgelöst", "source_cleared": "Eingang wieder normal",
     "trigger_test": "Manueller Testalarm", "acknowledge": "Alarme quittiert",
     "reset": "Alarme zurückgesetzt", "reset_blocked": "Reset blockiert",

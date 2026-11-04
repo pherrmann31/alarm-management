@@ -50,6 +50,9 @@
       },
       "output_log": {
         "name": "Output history"
+      },
+      "input_faults": {
+        "name": "Faulty inputs"
       }
     },
     "button": {
@@ -74,7 +77,8 @@
           "inputs": "Input sources",
           "rules": "Rules",
           "outputs": "Manage outputs",
-          "notifications": "Notifications"
+          "notifications": "Notifications",
+          "groups": "Groups & automatic enrollment"
         },
         "menu_option_descriptions": {
           "status": "Review alarms, sources and errors",
@@ -103,7 +107,7 @@
         "data": {
           "name": "Name",
           "entity_id": "HA entity",
-          "trigger_state": "Trigger state (raw value)",
+          "trigger_state": "Trigger state / button event",
           "enabled": "Input enabled"
         },
         "data_description": {
@@ -136,7 +140,7 @@
         "data": {
           "name": "Name",
           "entity_id": "HA entity",
-          "trigger_state": "Trigger state (raw value)",
+          "trigger_state": "Trigger state / button event",
           "enabled": "Input enabled"
         },
         "data_description": {
@@ -195,7 +199,8 @@
         "description": "Set the input condition, then assign outputs and notifications separately.",
         "data": {
           "name": "Rule name",
-          "enabled": "Rule enabled"
+          "enabled": "Rule enabled",
+          "priority": "Priority for shared outputs (5 = first)"
         },
         "data_description": {
           "name": "A short, distinct name for status and history.",
@@ -220,7 +225,8 @@
             "data": {
               "alarm_type": "Alarm type",
               "output_ids": "Assign outputs (optional)",
-              "notification_ids": "Assign notifications (optional)"
+              "notification_ids": "Assign notifications (optional)",
+              "group_ids": "Output and notification groups"
             },
             "data_description": {
               "alarm_type": "Used in status and text placeholders.",
@@ -235,7 +241,8 @@
         "description": "Set the input condition, then assign outputs and notifications separately.",
         "data": {
           "name": "Rule name",
-          "enabled": "Rule enabled"
+          "enabled": "Rule enabled",
+          "priority": "Priority for shared outputs (5 = first)"
         },
         "data_description": {
           "name": "A short, distinct name for status and history.",
@@ -260,7 +267,8 @@
             "data": {
               "alarm_type": "Alarm type",
               "output_ids": "Assign outputs (optional)",
-              "notification_ids": "Assign notifications (optional)"
+              "notification_ids": "Assign notifications (optional)",
+              "group_ids": "Output and notification groups"
             },
             "data_description": {
               "alarm_type": "Used in status and text placeholders.",
@@ -665,6 +673,80 @@
           "notification_overview": "Review recipients and assigned rules",
           "init": "Return to main menu"
         }
+      },
+      "groups": {
+        "title": "Manage groups",
+        "menu_options": {
+          "group_add": "Add group",
+          "group_edit": "Edit group",
+          "group_move": "Move detector",
+          "group_remove": "Delete group",
+          "discovery": "Automatically enroll smoke detectors",
+          "house_discovery": "Automatically enroll house alarm buttons",
+          "group_test": "Preview routing",
+          "init": "Back"
+        }
+      },
+      "group_add": {
+        "title": "Add group",
+        "data": {
+          "kind": "Group type"
+        }
+      },
+      "group_edit": {
+        "title": "Edit group",
+        "data": {
+          "group_id": "Group"
+        }
+      },
+      "group_details": {
+        "title": "Group settings",
+        "data": {
+          "name": "Name",
+          "members": "Members",
+          "mode": "Evaluation"
+        }
+      },
+      "group_move": {
+        "title": "Move detector",
+        "data": {
+          "source_id": "Detector",
+          "group_id": "Group"
+        },
+        "description": "Moves the detector to the selected group. Automatic all-detector groups retain it."
+      },
+      "group_remove": {
+        "title": "Delete group",
+        "data": {
+          "group_id": "Group"
+        },
+        "description": "Remove group references from rules first. Built-in groups cannot be deleted."
+      },
+      "discovery": {
+        "title": "Automatically enroll smoke detectors",
+        "data": {
+          "auto_smoke": "Automatically enroll new smoke detectors",
+          "targets": "Alarm outputs and notifications"
+        },
+        "description": "Detected smoke alarm entities:\n\n{devices}\n\nEnabling this creates or updates the all-smoke-detectors rule with your selected targets. New detectors enter the default smoke group. Moving a detector does not remove it from the all-smoke group. Battery entities are excluded."
+      },
+      "house_discovery": {
+        "title": "Automatically enroll house alarm buttons",
+        "data": {
+          "auto_house": "Enable automatic enrollment",
+          "house_pattern": "Name or entity ID pattern (e.g. event.house_alarm_*)",
+          "house_label": "HA label ID (optional)",
+          "house_trigger": "Button event type or trigger state",
+          "targets": "Alarm outputs and notifications"
+        },
+        "description": "Provide a specific name pattern or label ID. If both are set, both must match. Example: event.house_alarm_* with event type single. The MQTT/Zigbee integration must expose suitable HA entities; event types depend on the device. Enabling this creates or updates the all-house-alarm-buttons rule with the selected targets."
+      },
+      "group_test": {
+        "title": "Preview routing",
+        "description": "{result}",
+        "data": {
+          "group_id": "Group"
+        }
       }
     },
     "error": {
@@ -695,7 +777,10 @@
       "output_in_use": "This output is still assigned to rules. Remove those assignments first.",
       "output_owned": "This target is still controlled by the integration. Reset the alarm or disable the output and wait for the idle value to be confirmed.",
       "invalid_notification": "Check recipient selection, title and Pushover settings. Select at least one matching destination.",
-      "notification_too_long": "Shorten the message to 1024 characters; title up to 80 characters after substitution."
+      "notification_too_long": "Shorten the message to 1024 characters; title up to 80 characters after substitution.",
+      "group_in_use": "This group is in use or is a protected built-in group.",
+      "invalid_house_discovery": "Check the discovery pattern/label, trigger and at least one alarm target.",
+      "choose_discovery_targets": "Select at least one output or notification. Create these first if necessary."
     },
     "abort": {
       "invalid_configuration": "Inputs, rules or outputs are invalid or from a newer version. Nothing was overwritten; check logs and backup.",
@@ -707,7 +792,8 @@
       "max_rules": "Maximum of 30 rules. Remove a rule first.",
       "no_rules": "No rules yet. Add a rule to begin.",
       "max_outputs": "Shared limit of 20 outputs and notifications reached.",
-      "no_outputs": "No outputs configured yet."
+      "no_outputs": "No outputs configured yet.",
+      "group_member_in_use": "This item still belongs to a group. Remove its membership first."
     }
   },
   "selector": {
