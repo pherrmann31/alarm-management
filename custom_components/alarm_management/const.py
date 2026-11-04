@@ -1,7 +1,7 @@
 """Alarm Management constants."""
 
 DOMAIN = "alarm_management"
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 STORAGE_VERSION = 5
 SIGNAL_UPDATED = f"{DOMAIN}_updated"
 SERVICES = ("trigger_test", "acknowledge", "reset")

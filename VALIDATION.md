@@ -1,7 +1,5 @@
-# Prüfbericht v1.2.0
+# Prüfbericht v1.2.1
 
-04.11.2026. 247 automatisierte Offline-Tests bestanden. Python-Syntax, JSON, Versionskonsistenz, Übersetzungsschlüssel und Platzhalter, Flow-Ziele und ZIP-Inhalt geprüft.
+250 Offline-Tests bestanden. Drei neue Regressionen prüfen direktes Anlegen einer Gruppe mit Mitgliedern, Vorauswahl und vollständiges Abhaken beim Bearbeiten ohne Änderung anderer Gruppen sowie das Leeren bei weggelassenem optionalem Checkbox-Feld. Die bisherigen Assistenten-, Alarm-, Gruppen- und Upgrade-Tests bleiben enthalten.
 
-Neue Regressionen: vollständiger Assistent mit Eingängen, Ausgängen, vorausgewählten Regelbedingungen und späteren Nachrichten; genau ein Speichern und Neuladen; Rückkehr zur Übersicht; Entwurf verwerfen ohne Schreiben; Konfliktschutz bei zwischenzeitlichen Änderungen; Bestätigung vor Übernahme; Zurücknavigation ohne Verlust; gespeicherte Konfiguration bei Reload-Fehler erhalten; bewusst leere Nachrichten-Zuordnung beim Zurückwechseln erhalten; vorhandene Definitionen beim Abbrechen erhalten.
-
-Die 239 bisherigen Tests bleiben enthalten. Tests verwenden explizite HA-Doubles. Kein Test im laufenden HA, kein Browser-Renderingtest, kein hassfest-Lauf und kein Versand an reale Geräte. Vor Live-Abnahme vollständiges Backup erstellen.
+Zusätzlich Python-Syntax, JSON, Übersetzungsstruktur/-Platzhalter, Flow-Verweise und ZIP-Inhalt geprüft. Keine Live-HA- oder Browser-Renderingprüfung. Keine realen Geräteaktionen ausgeführt.

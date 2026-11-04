@@ -35,7 +35,7 @@ class GroupFlow:
 
     async def async_step_groups(self, user_input=None):
         self._ensure_sources()
-        return self.async_show_menu(step_id='groups', menu_options=['wizard', 'group_add', 'group_edit', 'group_move', 'group_remove', 'group_test', 'discovery', 'house_discovery', 'init'])
+        return self.async_show_menu(step_id='groups', menu_options=['wizard', 'group_add', 'group_edit', 'group_remove', 'group_test', 'discovery', 'house_discovery', 'init'])
 
     def _group_select(self, include_builtin=True):
         return SelectSelector({'options': [{'value': g['id'], 'label': g['name']} for g in self._groups['items']
@@ -66,9 +66,12 @@ class GroupFlow:
         errors = {}
         if user_input is not None:
             values.update(user_input)
+            values['members']=user_input.get('members', [])
             if not isinstance(values['name'], str) or not 1 <= len(values['name'].strip()) <= 80:
                 errors['name'] = 'invalid_name'
-            elif not set(values['members']) <= {item.id for item in choices}:
+            elif (not isinstance(values['members'],list) or
+                  not all(isinstance(identity,str) for identity in values['members']) or
+                  not set(values['members']) <= {item.id for item in choices}):
                 errors['members'] = 'unknown_input'
             else:
                 identity = group['id'] if group else uuid4().hex
@@ -80,7 +83,7 @@ class GroupFlow:
                 return self._finish(self._sources)
         schema = {probatio.Required('name', default=values['name']): str,
                   probatio.Optional('members', default=values['members']): SelectSelector({'options': [
-                      {'value': item.id, 'label': item.name} for item in choices], 'multiple': True})}
+                      {'value': item.id, 'label': item.name} for item in choices], 'multiple': True, 'mode': 'list'})}
         if self._group_kind == 'input' and self._group_selected not in (SMOKE_DEFAULT,HOUSE_DEFAULT):
             schema[probatio.Required('mode', default=values['mode'])] = SelectSelector({'options': [
                 {'value':'any','label':'Mindestens ein Mitglied löst aus'}, {'value':'all','label':'Alle Mitglieder lösen gleichzeitig aus'}]})

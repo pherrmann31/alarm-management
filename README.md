@@ -4,7 +4,7 @@
 
 Alarm Management verbindet Rauchmelder, Hausalarmtaster und weitere Zustandsquellen mit konfigurierbaren Regeln. Diese steuern Sirenen, Statusanzeigen und Benachrichtigungen. Du legst fest, welche Quellen zusammengehören und wer bei einem Alarm informiert wird.
 
-**Dokumentationsstand: v1.2.0 · Home Assistant Core ab 2026.10.4 laut HACS-Konfiguration · Custom Integration in Entwicklung**
+**Dokumentationsstand: v1.2.1 · Home Assistant Core ab 2026.10.4 laut HACS-Konfiguration · Custom Integration in Entwicklung**
 
 [Releases](https://github.com/pherrmann31/alarm-management/releases) · [Fehler melden](https://github.com/pherrmann31/alarm-management/issues) · [Prüfbericht](VALIDATION.md)
 
@@ -98,7 +98,7 @@ Dabei wird die Regel **„Feueralarm – alle Rauchmelder“** angelegt beziehun
 
 ### 3. Raumgruppen anlegen
 
-Meldergruppen wie **Erdgeschoss** und **Obergeschoss** anlegen und Quellen über **Melder verschieben** zuordnen. Diese manuellen Zuordnungen bleiben erhalten. Neue Geräte landen weiterhin in der Standardgruppe.
+Meldergruppen wie **Erdgeschoss** und **Obergeschoss** anlegen und die gewünschten Melder direkt in der sichtbaren Mitgliederliste anhaken. Unter **Gruppe bearbeiten** sind vorhandene Mitglieder bereits angehakt; Häkchen hinzufügen oder entfernen und speichern. Die Checkbox-Auswahl ändert nur die bearbeitete Gruppe. Ein Melder kann mehreren Gruppen angehören. Soll er aus der Standardgruppe herausgenommen werden, dort das Häkchen entfernen; „Alle Rauchmelder“ behält ihn weiterhin. Diese manuellen Zuordnungen bleiben erhalten. Neue Geräte landen weiterhin in der Standardgruppe.
 
 Für die allgemeine Feueralarmregel **„Alle Rauchmelder“** verwenden. So bleibt die allgemeine Alarmierung auch nach einem Gruppenwechsel wirksam. Zusätzliche Regeln können gezielt nur eine Raumgruppe auswerten.
 
@@ -157,7 +157,7 @@ Gespeicherte Alarmdaten nicht von Hand löschen. Ein Rückwechsel auf ältere Ve
 
 ## Entwicklungsstand und Grenzen
 
-Für v1.2.0 wurden **247 automatisierte Offline-Tests** sowie Syntax und Paketstruktur geprüft. Die HA-Anbindung wird dabei mit Testdoubles geprüft. Das ersetzt keine Abnahme im laufenden HA mit den eigenen Meldern, Sirenen, Handys und Tablets. Einzelheiten stehen im [Prüfbericht](VALIDATION.md).
+Für v1.2.1 wurden **250 automatisierte Offline-Tests** sowie Syntax und Paketstruktur geprüft. Die HA-Anbindung wird dabei mit Testdoubles geprüft. Das ersetzt keine Abnahme im laufenden HA mit den eigenen Meldern, Sirenen, Handys und Tablets. Einzelheiten stehen im [Prüfbericht](VALIDATION.md).
 
 Aktuelle Grenzen:
 

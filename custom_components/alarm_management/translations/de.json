@@ -680,7 +680,6 @@
         "menu_options": {
           "group_add": "Gruppe anlegen",
           "group_edit": "Gruppe bearbeiten",
-          "group_move": "Melder verschieben",
           "group_remove": "Gruppe löschen",
           "discovery": "Rauchmelder automatisch aufnehmen",
           "house_discovery": "Hausalarmtaster automatisch aufnehmen",
@@ -708,9 +707,10 @@
         "title": "Gruppeneinstellungen",
         "data": {
           "name": "Name",
-          "members": "Mitglieder",
+          "members": "Mitglieder auswählen",
           "mode": "Auswertung"
-        }
+        },
+        "description": "Mitglieder direkt an- oder abhaken. Bereits zugeordnete Einträge sind vorausgewählt. Speichern ändert nur diese Gruppe; andere Gruppenzuordnungen bleiben erhalten. Automatische Gesamtgruppen wie „Alle Rauchmelder“ werden unabhängig davon geführt. Es können auch alle Häkchen entfernt werden."
       },
       "group_move": {
         "title": "Melder verschieben",

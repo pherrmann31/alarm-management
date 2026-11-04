@@ -680,7 +680,6 @@
         "menu_options": {
           "group_add": "Add group",
           "group_edit": "Edit group",
-          "group_move": "Move detector",
           "group_remove": "Delete group",
           "discovery": "Automatically enroll smoke detectors",
           "house_discovery": "Automatically enroll house alarm buttons",
@@ -708,9 +707,10 @@
         "title": "Group settings",
         "data": {
           "name": "Name",
-          "members": "Members",
+          "members": "Select members",
           "mode": "Evaluation"
-        }
+        },
+        "description": "Check or uncheck members directly. Current members are preselected. Saving changes only this group; other memberships are preserved. Automatic all-detector groups are maintained independently. You can also clear every checkbox."
       },
       "group_move": {
         "title": "Move detector",
